@@ -70,6 +70,7 @@
                 <div style="padding: 20px; background: #fee2e2; color: #b91c1c; border: 1px solid #fca5a5; margin: 20px; border-radius: 8px; font-family: sans-serif;">
                     <h3>⚠️ เกิดข้อผิดพลาด (System Error)</h3>
                     <p><b>Message:</b> ${message}</p>
+                    <p>หากปัญหายังเกิดซ้ำ ให้ลองดาวน์โหลดไฟล์ใหม่อีกครั้ง</p>
                     <button onclick="localStorage.clear(); window.location.reload();" style="margin-top:10px; padding:5px 10px; cursor:pointer;">ล้างค่าและรีโหลด</button>
                 </div>
             `;
@@ -79,12 +80,10 @@
 
     <script type="text/babel">
         // ==========================================
-        // 🟢 ส่วนตั้งค่า: นำรหัส Firebase Config มาวางแทนที่ 
-const firebaseConfig = 
-{apiKey:"AIzaSyAmm8CJj4yU6Qclr1_l8yVwcQptOtnh0rE",authDomain:"volvo-finance.firebaseapp.com",projectId: "volvo-finance",storageBucket: "volvo-finance.firebasestorage.app",messagingSenderId: "713687952336",appId: "1:713687952336:web:00b6a228b36098cf5fe7d5",measurementId: "G-HFEWYL8GZ9"}; 
- ตรงนี้เพื่อข้ามหน้าจอตั้งค่า
+        // 🟢 ส่วนตั้งค่า: ค่าเริ่มต้นคือ null (เพื่อให้ระบบถามรหัสผ่านหน้าจอ)
+        // หากต้องการฝังรหัส ต้องแน่ใจว่าเป็นโค้ด JavaScript ที่ถูกต้องเท่านั้น
         // ==========================================
-        const FIREBASE_CONFIG = null; 
+        const FIREBASE_CONFIG = {apiKey: "AIzaSyAmm8CJj4yU6Qclr1_l8yVwcQptOtnh0rE",authDomain: "volvo-finance.firebaseapp.com",projectId: "volvo-finance",storageBucket: "volvo-finance.firebasestorage.app",messagingSenderId: "713687952336",appId: "1:713687952336:web:00b6a228b36098cf5fe7d5",measurementId: "G-HFEWYL8GZ9"};
         
         if (!window.React || !window.ReactDOM || !window.firebase) {
             throw new Error("กำลังโหลดเครื่องมือ... หากค้างหน้านี้นานเกินไป กรุณาตรวจสอบอินเทอร์เน็ต");
@@ -652,7 +651,7 @@ const firebaseConfig =
                                             <div className="flex items-center gap-3">
                                                 <div className="w-10 h-10 bg-white rounded-full flex items-center justify-center font-bold text-slate-500 shadow-sm border border-slate-100">{p.name[0]}</div>
                                                 <div>
-                                                    <div className="font-bold text-slate-800">{p.name} {userData.id === p.id && <span className="text-xs text-blue-600">(ฉัน)</span>}</div>
+                                                    <div className="font-bold text-slate-800">{p.name} {userData && userData.id === p.id && <span className="text-xs text-blue-600">(ฉัน)</span>}</div>
                                                     <div className="text-xs text-slate-500 uppercase font-semibold bg-white px-2 py-0.5 rounded border border-slate-200 inline-block mt-0.5">{p.role} • {p.status}</div>
                                                 </div>
                                             </div>
