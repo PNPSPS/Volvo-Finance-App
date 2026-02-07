@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Volvo Finance Service (Admin Mode)</title>
+    <title>Volvo Finance Service (Auto-Login)</title>
     
     <!-- 1. โหลด Styles -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -52,6 +52,15 @@
     </script>
 
     <script type="text/babel">
+        // ==========================================
+        // 🟢 ส่วนตั้งค่า: นำรหัส Firebase Config มาวางแทนที่ 
+    const firebaseConfig = {apiKey: "AIzaSyAmm8CJj4yU6Qclr1_l8yVwcQptOtnh0rE",authDomain: "volvo-finance.firebaseapp.com",projectId: "volvo-finance",storageBucket: "volvofinance.firebasestorage.app",messagingSenderId:"713687952336",
+appId:"1:713687952336:web:00b6a228b36098cf5fe7d5",measurementId: "G-HFEWYL8GZ9"}; 
+ตรงนี้เพื่อข้ามหน้าจอตั้งค่า
+        // ตัวอย่าง: const FIREBASE_CONFIG = { apiKey: "AIza...", authDomain: "..." };
+        // ==========================================
+        const FIREBASE_CONFIG = null; 
+        
         // ตรวจสอบความพร้อมของ Library
         if (!window.React || !window.ReactDOM || !window.firebase) {
             throw new Error("โหลดเครื่องมือไม่ครบ (Internet อาจมีปัญหา หรือโดนบล็อก)");
@@ -111,6 +120,9 @@
                             value={input} onChange={e=>setInput(e.target.value)}></textarea>
                         {err && <div className="text-red-500 text-xs mb-2">{err}</div>}
                         <button onClick={save} className="w-full bg-blue-600 text-white py-2 rounded hover:bg-blue-700">บันทึก</button>
+                        <p className="text-xs text-center text-slate-400 mt-4">
+                            *เพื่อไม่ต้องกรอกใหม่ทุกครั้ง: ให้เปิดไฟล์ด้วย Notepad แล้วนำโค้ดไปวางที่ตัวแปร FIREBASE_CONFIG ด้านบนสุด
+                        </p>
                     </div>
                 </div>
             );
@@ -119,6 +131,11 @@
         // --- Main App ---
         const App = () => {
             const [config, setConfig] = useState(() => {
+                // 1. ลองใช้ค่าที่ฝังไว้ในโค้ดก่อน
+                if (FIREBASE_CONFIG && typeof FIREBASE_CONFIG === 'object') {
+                    return FIREBASE_CONFIG;
+                }
+                // 2. ถ้าไม่มี ให้ลองดึงจาก Local Storage
                 try {
                     const saved = localStorage.getItem('vfs_firebase_config');
                     return saved ? JSON.parse(saved) : null;
@@ -156,7 +173,8 @@
                 } catch (e) {
                     alert("Firebase Init Failed: " + e.message);
                     localStorage.removeItem('vfs_firebase_config');
-                    window.location.reload();
+                    // ถ้า config ฝังมาผิด อาจต้องแก้โค้ด
+                    if(FIREBASE_CONFIG) alert("คำเตือน: รหัส FIREBASE_CONFIG ที่ฝังไว้ไม่ถูกต้อง");
                 }
             }, [config]);
 
