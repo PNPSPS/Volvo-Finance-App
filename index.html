@@ -1,513 +1,565 @@
-import React, { useState, useEffect } from 'react';
-import { 
-  PlusCircle, 
-  MinusCircle, 
-  Wallet, 
-  Clock, 
-  CheckCircle2, 
-  XCircle, 
-  User, 
-  Briefcase, 
-  PieChart, 
-  Activity,
-  ChevronRight,
-  Filter,
-  Trash2,
-  TrendingUp,
-  TrendingDown,
-  Calendar,
-  CloudLightning,
-  Lock,
-  Unlock,
-  Settings,
-  Database,
-  Wifi,
-  WifiOff,
-  Save
-} from 'lucide-react';
-
-// --- Firebase Imports ---
-import { initializeApp } from 'firebase/app';
-import { 
-  getFirestore, 
-  collection, 
-  addDoc, 
-  updateDoc, 
-  deleteDoc, 
-  doc, 
-  onSnapshot, 
-  query 
-} from 'firebase/firestore';
-import { 
-  getAuth, 
-  signInWithCustomToken, 
-  signInAnonymously, 
-  onAuthStateChanged 
-} from 'firebase/auth';
-
-// --- Firebase Configuration (ใส่ค่าของคุณตรงนี้) ---
-// TODO: คุณเพิร์ธนำค่าจาก Firebase Console มาใส่แทนที่ในเครื่องหมายคำพูดด้านล่างนี้ครับ
-const firebaseConfig = {
-  apiKey:"AIzaSyAmm8CJj4yU6Qclr1_l8yVwcQptOtnh0rE",
-  authDomain:"volvo-finance.firebaseapp.com",
-  projectId:"volvo-finance",
-  storageBucket:"volvo-finance.firebasestorage.app",
-  messagingSenderId: "713687952336",
-  appId:"1:713687952336:web:00b6a228b36098cf5fe7d5",
-  measurementId: "G-HFEWYL8GZ9"
-};
-
-// --- Initialization Logic ---
-let app, auth, db;
-let isConfigured = false;
-let appId = 'volvo-main-app';
-
-try {
-  // 1. เช็ค Environment Variable (สำหรับ Preview ในนี้)
-  if (typeof __firebase_config !== 'undefined') {
-     const config = JSON.parse(__firebase_config);
-     app = initializeApp(config);
-     if (typeof __app_id !== 'undefined') appId = __app_id;
-     isConfigured = true;
-  } 
-  // 2. ถ้าไม่มี ให้เช็คค่า Hardcode ด้านบน
-  else if (firebaseConfig.apiKey && firebaseConfig.apiKey !== "ใส่ค่า_apiKey_ที่นี่") {
-     app = initializeApp(firebaseConfig);
-     isConfigured = true;
-  }
-  
-  if (isConfigured) {
-    auth = getAuth(app);
-    db = getFirestore(app);
-  }
-} catch (e) {
-  console.error("Init Error", e);
-}
-
-// --- Main App Component ---
-const App = () => {
-  // --- State Management ---
-  const [user, setUser] = useState(null);
-  const [transactions, setTransactions] = useState([]);
-  const [loading, setLoading] = useState(true);
-
-  // UI State
-  const [view, setView] = useState('dashboard');
-  const [currentUserRole, setCurrentUserRole] = useState('staff');
-  const [showModal, setShowModal] = useState(false);
-  const [modalType, setModalType] = useState('expense');
-  const [filterType, setFilterType] = useState('all');
-  
-  // Settings & Auth State
-  const [showAuthModal, setShowAuthModal] = useState(false);
-  const [passwordInput, setPasswordInput] = useState('');
-  const [authError, setAuthError] = useState('');
-
-  // --- 1. Authentication Effect (ทำงานเมื่อเริ่มแอป) ---
-  useEffect(() => {
-    // ถ้าไม่ได้ตั้งค่า Cloud (Offline Mode) ให้ข้าม Auth ไปเลย
-    if (!isConfigured || !auth) {
-        setLoading(false); 
-        return;
-    }
-
-    // เริ่มกระบวนการ Login
-    const initAuth = async () => {
-      try {
-        if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
-          await signInWithCustomToken(auth, __initial_auth_token);
-        } else {
-          await signInAnonymously(auth);
-        }
-      } catch (error) { 
-        console.error("Auth Error:", error); 
-        // ไม่ต้อง setLoading(false) ที่นี่ รอ onAuthStateChanged
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Volvo Finance Service</title>
+    
+    <!-- 1. นำเข้า Tailwind CSS สำหรับดีไซน์สวยๆ -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- 2. ตั้งค่า Import Map เพื่อดึง React และ Firebase มาใช้ -->
+    <script type="importmap">
+    {
+      "imports": {
+        "react": "https://esm.sh/react@18.2.0",
+        "react-dom/client": "https://esm.sh/react-dom@18.2.0/client",
+        "lucide-react": "https://esm.sh/lucide-react@0.309.0",
+        "firebase/app": "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js",
+        "firebase/auth": "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js",
+        "firebase/firestore": "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js"
       }
-    };
-    initAuth();
+    }
+    </script>
 
-    // ฟังสถานะ Login
-    const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
-        setUser(currentUser);
-        // ถ้า Login ไม่ผ่านหรือไม่สำเร็จ ให้หยุดโหลด เพื่อให้หน้าจอแสดงผลได้ (แม้จะเป็น Offline)
-        if (!currentUser) setLoading(false);
-    });
+    <!-- 3. นำเข้า Babel เพื่อให้อ่านโค้ด React (JSX) ได้ในไฟล์เดียว -->
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
 
-    return () => unsubscribe();
-  }, []);
-
-  // --- 2. Data Sync Effect (ทำงานเมื่อมี User แล้ว) ---
-  useEffect(() => {
-    // Case 1: Online & Authenticated (สำคัญ: ต้องมี user ก่อนถึงจะ query ได้)
-    if (isConfigured && user) {
-        setLoading(true); // โหลดหมุนๆ ระหว่างดึงข้อมูล
-        
-        const q = query(collection(db, 'artifacts', appId, 'public', 'data', 'transactions'));
-        
-        const unsubscribe = onSnapshot(q, (snapshot) => {
-            const docs = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-            docs.sort((a, b) => new Date(b.date) - new Date(a.date));
-            setTransactions(docs);
-            setLoading(false);
-        }, (err) => {
-            console.error("Sync Error", err);
-            // ถ้า Error Permission ให้หยุดโหลด
-            setLoading(false);
-        });
-
-        return () => unsubscribe();
-    } 
+    <style>
+        body { font-family: 'Prompt', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background-color: #F8FAFC; }
+        .glass-panel { background: rgba(255, 255, 255, 0.9); backdrop-filter: blur(10px); }
+        /* Animation Utility */
+        .animate-in { animation: fadeIn 0.3s ease-out; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+    </style>
     
-    // Case 2: Offline Mode (โหลดจาก LocalStorage)
-    else if (!isConfigured) {
-        const savedData = localStorage.getItem('volvo_local_transactions');
-        if (savedData) {
-            setTransactions(JSON.parse(savedData));
-        } else {
-            // Mock Data เริ่มต้น
-            setTransactions([
-              { id: 1, type: 'income', title: 'ตัวอย่าง: รายรับเช็คระยะ (Offline)', amount: 5000, requester: 'System', status: 'approved', date: new Date().toISOString(), category: 'service' },
-            ]);
-        }
-        setLoading(false);
-    }
-  }, [user]); // dependency array ใส่ user เพื่อให้ทำงานใหม่เมื่อ user เปลี่ยนสถานะ
+    <!-- Link Font -->
+    <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div id="root"></div>
 
-  // Sync Local Data when transactions change (Only in Offline Mode)
-  useEffect(() => {
-    if (!isConfigured) {
-      localStorage.setItem('volvo_local_transactions', JSON.stringify(transactions));
-    }
-  }, [transactions]);
+    <!-- 4. ส่วนของโปรแกรม (Application Code) -->
+    <script type="text/babel" data-type="module">
+        import React, { useState, useEffect, useMemo } from 'react';
+        import { createRoot } from 'react-dom/client';
+        import { 
+            Wallet, PlusCircle, MinusCircle, CheckCircle2, XCircle, 
+            History, User, LogOut, AlertCircle, TrendingUp, TrendingDown, 
+            Clock, Building2, Lock, UserPlus, PieChart, CreditCard, 
+            ChevronRight, Sparkles, Settings
+        } from 'lucide-react';
+        import { initializeApp } from 'firebase/app';
+        import { getAuth, signInAnonymously, onAuthStateChanged, signInWithCustomToken } from 'firebase/auth';
+        import { getFirestore, collection, addDoc, onSnapshot, doc, updateDoc, deleteDoc, serverTimestamp } from 'firebase/firestore';
 
-  // --- Handlers (Hybrid: Online/Offline) ---
-  
-  const handleApprove = async (id) => {
-    if (isConfigured && user) {
-      try {
-        const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'transactions', id.toString());
-        await updateDoc(docRef, { status: 'approved' });
-      } catch (e) { console.error("Error", e); }
-    } else {
-      setTransactions(prev => prev.map(t => t.id === id ? { ...t, status: 'approved' } : t));
-    }
-  };
+        // --- Config Manager Component (UPDATED) ---
+        // ปรับปรุงระบบอ่านค่า Config ให้รองรับโค้ด JavaScript Object จาก Firebase Console โดยตรง
+        const ConfigScreen = ({ onSave }) => {
+            const [configInput, setConfigInput] = useState('');
+            const [error, setError] = useState('');
 
-  const handleReject = async (id) => {
-    if (isConfigured && user) {
-      try {
-        const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'transactions', id.toString());
-        await updateDoc(docRef, { status: 'rejected' });
-      } catch (e) { console.error("Error", e); }
-    } else {
-      setTransactions(prev => prev.map(t => t.id === id ? { ...t, status: 'rejected' } : t));
-    }
-  };
+            const handleSave = () => {
+                try {
+                    let cleaned = configInput.trim();
+                    
+                    // 1. ลบ const firebaseConfig = หรือ var ... ออก
+                    cleaned = cleaned.replace(/^(const|var|let)\s+firebaseConfig\s*=\s*/, '');
+                    
+                    // 2. ลบเครื่องหมาย ; ตัวสุดท้ายออก (ถ้ามี)
+                    cleaned = cleaned.replace(/;$/, '');
 
-  const handleDelete = async (id) => {
-    if (!confirm('ยืนยันการลบรายการนี้?')) return;
-    
-    if (isConfigured && user) {
-      try {
-        const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'transactions', id.toString());
-        await deleteDoc(docRef);
-      } catch (e) { console.error("Error", e); }
-    } else {
-      setTransactions(prev => prev.filter(t => t.id !== id));
-    }
-  };
+                    // 3. ใช้ Function Constructor เพื่อแปลง string เป็น object (รองรับทั้ง JSON และ JS Object)
+                    // วิธีนี้ปลอดภัยกว่า eval เล็กน้อยและยืดหยุ่นกว่า JSON.parse
+                    const json = new Function('return ' + cleaned)();
+                    
+                    if (!json || !json.apiKey) {
+                        throw new Error("ไม่พบค่า apiKey ในโค้ดที่ระบุ");
+                    }
 
-  const handleAddTransaction = async (e) => {
-    e.preventDefault();
-    const formData = new FormData(e.target);
-    const newTransaction = {
-      type: modalType,
-      title: formData.get('title'),
-      amount: parseFloat(formData.get('amount')),
-      requester: formData.get('requester') || (currentUserRole === 'manager' ? 'คุณเพิร์ธ (ผจก.)' : 'พนักงาน'),
-      status: modalType === 'income' ? 'approved' : 'pending',
-      date: new Date().toISOString(),
-      category: formData.get('category'),
-      createdBy: user?.uid || 'local-user'
-    };
+                    onSave(json);
+                } catch (e) {
+                    console.error(e);
+                    setError('อ่านค่าไม่สำเร็จ: กรุณาก๊อปปี้มาทั้งบรรทัด "const firebaseConfig = { ... };" จากหน้าเว็บ Firebase แล้วลองใหม่ครับ');
+                }
+            };
 
-    if (isConfigured && user) {
-      try {
-        await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'transactions'), newTransaction);
-      } catch (e) { alert("Error adding data"); }
-    } else {
-      const localTx = { ...newTransaction, id: Date.now() };
-      setTransactions(prev => [localTx, ...prev]);
-    }
-    setShowModal(false);
-  };
-
-  // --- Auth Handlers ---
-  const handleRoleSwitch = () => {
-    if (currentUserRole === 'manager') {
-      setCurrentUserRole('staff');
-    } else {
-      setShowAuthModal(true);
-      setPasswordInput('');
-      setAuthError('');
-    }
-  };
-
-  const handleAuthSubmit = (e) => {
-    e.preventDefault();
-    if (passwordInput === '211221') { 
-      setCurrentUserRole('manager');
-      setShowAuthModal(false);
-    } else {
-      setAuthError('รหัสผ่านไม่ถูกต้อง');
-      setPasswordInput('');
-    }
-  };
-
-  // --- Helper Functions ---
-  const groupTransactionsByDate = (txs) => {
-    const groups = {};
-    txs.forEach(t => {
-      const date = new Date(t.date).toDateString();
-      if (!groups[date]) groups[date] = [];
-      groups[date].push(t);
-    });
-    return groups;
-  };
-
-  const getFilteredTransactions = () => {
-    let filtered = transactions;
-    if (filterType === 'pending') filtered = filtered.filter(t => t.status === 'pending');
-    else if (filterType === 'income') filtered = filtered.filter(t => t.type === 'income');
-    else if (filterType === 'expense') filtered = filtered.filter(t => t.type === 'expense');
-    return filtered;
-  };
-
-  const getDateLabel = (dateStr) => {
-    const date = new Date(dateStr);
-    const today = new Date();
-    const yesterday = new Date(today);
-    yesterday.setDate(yesterday.getDate() - 1);
-    if (date.toDateString() === today.toDateString()) return 'วันนี้';
-    if (date.toDateString() === yesterday.toDateString()) return 'เมื่อวาน';
-    return date.toLocaleDateString('th-TH', { day: 'numeric', month: 'short', year: '2-digit' });
-  };
-
-  // --- Derived Stats ---
-  const totalIncome = transactions.filter(t => t.type === 'income' && t.status === 'approved').reduce((acc, curr) => acc + curr.amount, 0);
-  const totalExpense = transactions.filter(t => t.type === 'expense' && t.status === 'approved').reduce((acc, curr) => acc + curr.amount, 0);
-  const pendingCount = transactions.filter(t => t.status === 'pending').length;
-  const netBalance = totalIncome - totalExpense;
-  const expenseCategories = transactions.filter(t => t.type === 'expense' && t.status === 'approved').reduce((acc, curr) => { acc[curr.category] = (acc[curr.category] || 0) + curr.amount; return acc; }, {});
-  const totalApprovedExpense = Object.values(expenseCategories).reduce((a, b) => a + b, 0) || 1;
-  const categoryLabels = { service: 'ค่าแรง/บริการ', parts: 'ค่าอะไหล่', tools: 'เครื่องมือช่าง', transport: 'ค่าเดินทาง', welfare: 'สวัสดิการ', other: 'อื่นๆ' };
-
-  if (loading) return <div className="min-h-screen bg-slate-50 flex items-center justify-center"><div className="w-10 h-10 bg-blue-900 rounded-full animate-bounce"></div></div>;
-
-  return (
-    <div className="min-h-screen bg-slate-50 text-slate-800 font-sans pb-24">
-      {/* Header */}
-      <header className="bg-white shadow-sm sticky top-0 z-20 border-b border-slate-200">
-        <div className="max-w-md mx-auto px-4 py-3 flex justify-between items-center">
-          <div className="flex items-center space-x-2">
-            <div className="w-8 h-8 bg-blue-900 rounded-full flex items-center justify-center text-white font-bold shadow-sm">V</div>
-            <div className="leading-tight">
-              <h1 className="font-bold text-lg text-slate-800 tracking-tight">Volvo Service</h1>
-              <div className={`text-[10px] font-medium flex items-center gap-1 px-2 py-0.5 rounded-full transition-colors ${isConfigured ? 'bg-emerald-50 text-emerald-600' : 'bg-slate-100 text-slate-500'}`}>
-                {isConfigured ? (
-                    <><CloudLightning size={10} className="text-emerald-500" /> Online</>
-                ) : (
-                    <><WifiOff size={10} /> Offline Mode</>
-                )}
-              </div>
-            </div>
-          </div>
-          <button 
-                onClick={handleRoleSwitch}
-                className={`text-xs px-3 py-1.5 rounded-full transition-all flex items-center gap-1.5 font-medium border ${
-                    currentUserRole === 'manager' 
-                    ? 'bg-blue-900 text-white border-blue-900 shadow-sm' 
-                    : 'bg-slate-100 text-slate-600 border-slate-200'
-                }`}
-            >
-                {currentUserRole === 'manager' ? <Unlock size={12} /> : <Lock size={12} />}
-                {currentUserRole === 'manager' ? 'Manager' : 'Staff'}
-            </button>
-        </div>
-      </header>
-
-      <main className="max-w-md mx-auto p-4 space-y-6">
-        
-        {/* Offline Warning Banner */}
-        {!isConfigured && (
-            <div className="bg-slate-800 text-slate-200 text-xs p-3 rounded-lg flex justify-between items-center shadow-md">
-                <span className="flex items-center gap-2"><Save size={14}/> ข้อมูลบันทึกในเครื่องนี้เท่านั้น</span>
-                <span>(กรุณาใส่ Config ในโค้ดเพื่อออนไลน์)</span>
-            </div>
-        )}
-
-        {/* VIEW: DASHBOARD */}
-        {view === 'dashboard' && (
-          <div className="space-y-6 animate-in fade-in duration-500">
-            {/* Balance Card */}
-            <div className="bg-gradient-to-br from-slate-800 via-blue-900 to-slate-900 text-white rounded-2xl p-6 shadow-xl relative overflow-hidden">
-              <div className="absolute top-0 right-0 w-40 h-40 bg-white opacity-[0.03] rounded-full -mr-16 -mt-16 blur-2xl"></div>
-              <div className="relative z-10">
-                <p className="text-slate-300 text-xs font-medium uppercase tracking-wider mb-2">Net Balance</p>
-                <h2 className="text-4xl font-bold mb-6 tracking-tight">฿{netBalance.toLocaleString()}</h2>
-                
-                <div className="grid grid-cols-2 gap-4 pt-4 border-t border-white/10">
-                  <div className="bg-emerald-500/10 p-2 rounded-lg border border-emerald-500/20 backdrop-blur-sm">
-                    <p className="text-emerald-300 text-[10px] mb-1 flex items-center uppercase tracking-wide"><TrendingUp size={12} className="mr-1"/> Income</p>
-                    <p className="font-semibold text-lg text-emerald-100">฿{totalIncome.toLocaleString()}</p>
-                  </div>
-                  <div className="bg-rose-500/10 p-2 rounded-lg border border-rose-500/20 backdrop-blur-sm">
-                    <p className="text-rose-300 text-[10px] mb-1 flex items-center uppercase tracking-wide"><TrendingDown size={12} className="mr-1"/> Expense</p>
-                    <p className="font-semibold text-lg text-rose-100">฿{totalExpense.toLocaleString()}</p>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* Quick Stats */}
-            <div className="bg-white rounded-xl p-5 border border-slate-200 shadow-sm">
-                <h3 className="font-bold text-slate-800 mb-4 flex items-center text-sm">
-                    <PieChart size={16} className="mr-2 text-blue-600"/> วิเคราะห์รายจ่าย (อนุมัติแล้ว)
-                </h3>
-                {Object.keys(expenseCategories).length > 0 ? (
-                    <div>
-                        {expenseCategories['parts'] && <CategoryBar label="อะไหล่สำรอง" amount={expenseCategories['parts']} total={totalApprovedExpense} colorClass="bg-blue-500" />}
-                        {expenseCategories['tools'] && <CategoryBar label="เครื่องมือช่าง" amount={expenseCategories['tools']} total={totalApprovedExpense} colorClass="bg-indigo-500" />}
-                        {expenseCategories['transport'] && <CategoryBar label="ค่าเดินทาง" amount={expenseCategories['transport']} total={totalApprovedExpense} colorClass="bg-amber-500" />}
-                        {expenseCategories['welfare'] && <CategoryBar label="สวัสดิการ" amount={expenseCategories['welfare']} total={totalApprovedExpense} colorClass="bg-pink-500" />}
-                        {expenseCategories['other'] && <CategoryBar label="อื่นๆ" amount={expenseCategories['other']} total={totalApprovedExpense} colorClass="bg-slate-400" />}
+            return (
+                <div className="min-h-screen flex items-center justify-center p-4 bg-slate-100">
+                    <div className="bg-white p-8 rounded-2xl shadow-xl max-w-md w-full animate-in">
+                        <div className="w-16 h-16 bg-blue-50 rounded-full flex items-center justify-center mx-auto mb-4 text-blue-500">
+                            <Settings size={32} />
+                        </div>
+                        <h2 className="text-xl font-bold text-center mb-2 text-slate-800">ตั้งค่าการเชื่อมต่อ</h2>
+                        <p className="text-sm text-slate-500 text-center mb-6">
+                            วางโค้ด <b>firebaseConfig</b> ที่ได้จากเว็บ Firebase ลงในช่องด้านล่าง<br/>
+                            <span className="text-xs text-slate-400">(ก๊อปปี้มาทั้งก้อนที่มี const... ได้เลยครับ)</span>
+                        </p>
+                        <textarea 
+                            value={configInput}
+                            onChange={(e) => setConfigInput(e.target.value)}
+                            placeholder={'const firebaseConfig = {\n  apiKey: "AIzaSy...",\n  authDomain: "..."\n};'}
+                            className="w-full h-48 p-4 border border-slate-200 rounded-xl text-xs font-mono mb-4 focus:ring-2 focus:ring-blue-500 outline-none bg-slate-50 text-slate-600"
+                        ></textarea>
+                        {error && (
+                            <div className="bg-rose-50 text-rose-600 text-xs p-3 rounded-lg mb-4 text-center border border-rose-100 flex items-center justify-center gap-2">
+                                <AlertCircle size={14}/> {error}
+                            </div>
+                        )}
+                        <button onClick={handleSave} className="w-full bg-blue-600 text-white py-3 rounded-xl font-bold hover:bg-blue-700 transition shadow-lg shadow-blue-500/30">
+                            บันทึกและเริ่มใช้งาน
+                        </button>
+                        <p className="text-xs text-slate-400 mt-4 text-center">
+                            *ข้อมูลนี้จะถูกบันทึกในเครื่องนี้เท่านั้นเพื่อความปลอดภัย
+                        </p>
                     </div>
-                ) : ( <p className="text-center text-slate-400 text-sm py-4">ยังไม่มีรายจ่ายที่อนุมัติ</p> )}
-            </div>
+                </div>
+            );
+        };
 
-            {/* Actions */}
-            <div className="grid grid-cols-2 gap-3">
-              <button onClick={() => { setModalType('income'); setShowModal(true); }} className="flex flex-col items-center justify-center gap-2 bg-emerald-50 p-4 rounded-xl border border-emerald-100 text-emerald-800"><div className="bg-white p-2 rounded-full shadow-sm text-emerald-600"><PlusCircle size={24} /></div><span className="font-bold text-sm">รับเงินเข้า</span></button>
-              <button onClick={() => { setModalType('expense'); setShowModal(true); }} className="flex flex-col items-center justify-center gap-2 bg-rose-50 p-4 rounded-xl border border-rose-100 text-rose-800"><div className="bg-white p-2 rounded-full shadow-sm text-rose-600"><Wallet size={24} /></div><span className="font-bold text-sm">ขอเบิกจ่าย</span></button>
-            </div>
-          </div>
-        )}
+        // --- Constants & Utilities ---
+        const INCOME_CATEGORIES = [
+            { id: 'scrap', label: 'ขายของเก่า/รีไซเคิล', color: 'bg-orange-100 text-orange-700', icon: '♻️' },
+            { id: 'contribution', label: 'เงินสมทบ/บริจาค', color: 'bg-indigo-100 text-indigo-700', icon: '🤝' },
+            { id: 'fine', label: 'ค่าปรับ', color: 'bg-rose-100 text-rose-700', icon: '⚠️' },
+            { id: 'activity', label: 'กิจกรรมพิเศษ', color: 'bg-purple-100 text-purple-700', icon: '🎉' },
+            { id: 'other', label: 'อื่นๆ', color: 'bg-slate-100 text-slate-700', icon: '📦' }
+        ];
 
-        {/* VIEW: REQUESTS */}
-        {view === 'requests' && (
-          <div className="space-y-4 animate-in slide-in-from-right duration-300">
-            <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
-                {['all', 'pending', 'income', 'expense'].map(f => (
-                    <button key={f} onClick={() => setFilterType(f)} className={`px-4 py-1.5 rounded-full text-xs font-medium whitespace-nowrap border transition-colors ${filterType === f ? 'bg-slate-800 text-white border-slate-800' : 'bg-white text-slate-600 border-slate-200'}`}>
-                        {f === 'all' && 'ทั้งหมด'}
-                        {f === 'pending' && `รออนุมัติ (${pendingCount})`}
-                        {f === 'income' && 'รายรับ'}
-                        {f === 'expense' && 'รายจ่าย'}
-                    </button>
-                ))}
-            </div>
+        const formatMoney = (num) => new Intl.NumberFormat('th-TH', { style: 'currency', currency: 'THB' }).format(num);
+        const formatDate = (ts) => ts ? new Date(ts.seconds * 1000).toLocaleDateString('th-TH', { day: 'numeric', month: 'short', year: '2-digit', hour: '2-digit', minute: '2-digit' }) : 'Just now';
 
-            <div className="space-y-4">
-                {Object.entries(groupTransactionsByDate(getFilteredTransactions())).sort((a,b) => new Date(b[0]) - new Date(a[0])).map(([date, txs]) => (
-                    <div key={date}>
-                        <h4 className="text-xs font-bold text-slate-400 mb-2 ml-1 flex items-center"><Calendar size={12} className="mr-1"/> {getDateLabel(date)}</h4>
-                        <div className="bg-white rounded-xl shadow-sm border border-slate-200 divide-y divide-slate-100 overflow-hidden">
-                            {txs.map(t => (
-                                <div key={t.id} className={`p-4 transition-colors ${t.status === 'pending' ? 'bg-amber-50/40' : 'hover:bg-slate-50'}`}>
-                                    <div className="flex justify-between items-start mb-2">
-                                        <div className="flex items-start gap-3">
-                                            <div className={`w-8 h-8 mt-1 rounded-full flex items-center justify-center shrink-0 text-xs font-bold ${t.type === 'income' ? 'bg-emerald-100 text-emerald-600' : 'bg-rose-100 text-rose-600'}`}>{t.type === 'income' ? 'IN' : 'OUT'}</div>
-                                            <div>
-                                                <p className="font-bold text-slate-800 text-sm">{t.title}</p>
-                                                <p className="text-xs text-slate-500 mt-0.5 flex items-center gap-1">{t.requester} • <span className="bg-slate-100 px-1.5 py-0.5 rounded text-[10px]">{categoryLabels[t.category] || t.category}</span></p>
-                                            </div>
+        const Badge = ({ status }) => {
+            const styles = {
+                pending: "bg-amber-50 text-amber-700 ring-1 ring-amber-600/20",
+                approved: "bg-emerald-50 text-emerald-700 ring-1 ring-emerald-600/20",
+                rejected: "bg-rose-50 text-rose-700 ring-1 ring-rose-600/20",
+                manager: "bg-indigo-50 text-indigo-700 ring-1 ring-indigo-600/20",
+                staff: "bg-slate-50 text-slate-600 ring-1 ring-slate-600/20"
+            };
+            return <span className={`px-2.5 py-1 rounded-md text-[10px] font-semibold tracking-wide uppercase ${styles[status] || styles.staff}`}>{status}</span>;
+        };
+
+        const Button = ({ children, onClick, variant = "primary", className = "", disabled = false, type = "button" }) => {
+            const variants = {
+                primary: "bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 text-white shadow-lg shadow-blue-500/30",
+                secondary: "bg-white border border-slate-200 text-slate-700 hover:bg-slate-50",
+                danger: "bg-rose-50 hover:bg-rose-100 text-rose-600 border border-rose-200",
+                success: "bg-emerald-600 hover:bg-emerald-700 text-white shadow-lg shadow-emerald-500/30"
+            };
+            return (
+                <button type={type} onClick={onClick} disabled={disabled} className={`px-4 py-2.5 rounded-xl font-medium transition-all active:scale-95 disabled:opacity-50 flex items-center justify-center gap-2 ${variants[variant]} ${className}`}>
+                    {children}
+                </button>
+            );
+        };
+
+        // --- Main App Component ---
+        const App = () => {
+            // State for Firebase Config
+            const [firebaseConfig, setFirebaseConfig] = useState(() => {
+                const local = localStorage.getItem('vfs_firebase_config');
+                // ตรวจสอบว่ามี Global config จาก environment หรือไม่
+                if (typeof __firebase_config !== 'undefined') return JSON.parse(__firebase_config);
+                // ถ้าไม่มีใช้ local storage
+                return local ? JSON.parse(local) : null;
+            });
+
+            // ถ้าไม่มี Config ให้แสดงหน้าจอตั้งค่า
+            if (!firebaseConfig) {
+                return <ConfigScreen onSave={(cfg) => {
+                    localStorage.setItem('vfs_firebase_config', JSON.stringify(cfg));
+                    setFirebaseConfig(cfg);
+                    window.location.reload(); 
+                }} />;
+            }
+
+            // Initialize Firebase
+            const app = useMemo(() => initializeApp(firebaseConfig), [firebaseConfig]);
+            const auth = useMemo(() => getAuth(app), [app]);
+            const db = useMemo(() => getFirestore(app), [app]);
+            // ใช้ App ID มาตรฐานถ้าไม่มีการกำหนด
+            const appId = typeof __app_id !== 'undefined' ? __app_id : 'volvo-service-fund';
+
+            // ... State Definitions ...
+            const [user, setUser] = useState(null);
+            const [currentUserData, setCurrentUserData] = useState(null);
+            const [transactions, setTransactions] = useState([]);
+            const [requests, setRequests] = useState([]);
+            const [profiles, setProfiles] = useState([]);
+            
+            // UI States
+            const [activeTab, setActiveTab] = useState('dashboard');
+            const [showRequestModal, setShowRequestModal] = useState(false);
+            const [showDepositModal, setShowDepositModal] = useState(false);
+            const [showRegisterModal, setShowRegisterModal] = useState(false);
+            const [selectedProfile, setSelectedProfile] = useState(null);
+            const [pinInput, setPinInput] = useState('');
+            const [loginError, setLoginError] = useState('');
+            const [registerSuccessMsg, setRegisterSuccessMsg] = useState('');
+
+            // Form States
+            const [amount, setAmount] = useState('');
+            const [description, setDescription] = useState('');
+            const [depositCategory, setDepositCategory] = useState('scrap');
+            const [newName, setNewName] = useState('');
+            const [newRole, setNewRole] = useState('staff');
+            const [newPin, setNewPin] = useState('');
+
+            // --- Effects ---
+            useEffect(() => {
+                const initAuth = async () => {
+                    if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+                        await signInWithCustomToken(auth, __initial_auth_token);
+                    } else {
+                        await signInAnonymously(auth);
+                    }
+                };
+                initAuth();
+                return onAuthStateChanged(auth, setUser);
+            }, [auth]);
+
+            useEffect(() => {
+                if (!user) return;
+                
+                // Real-time Listeners
+                const unsubUsers = onSnapshot(collection(db, 'artifacts', appId, 'public', 'data', 'users'), (snap) => {
+                    const data = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                    setProfiles(data);
+                    // Auto-seed Admin if empty
+                    if (data.length === 0) {
+                        addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'users'), {
+                            name: 'เพิร์ธ', role: 'manager', pin: '2121', status: 'active', createdAt: serverTimestamp()
+                        });
+                    }
+                });
+
+                const unsubTx = onSnapshot(collection(db, 'artifacts', appId, 'public', 'data', 'transactions'), (snap) => {
+                    const data = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                    data.sort((a, b) => (b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0));
+                    setTransactions(data);
+                });
+
+                const unsubReq = onSnapshot(collection(db, 'artifacts', appId, 'public', 'data', 'requests'), (snap) => {
+                    const data = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                    data.sort((a, b) => (b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0));
+                    setRequests(data);
+                });
+
+                return () => { unsubUsers(); unsubTx(); unsubReq(); };
+            }, [user, db, appId]);
+
+            // --- Logic ---
+            const balance = useMemo(() => transactions.reduce((acc, curr) => curr.type === 'income' ? acc + parseFloat(curr.amount) : acc - parseFloat(curr.amount), 0), [transactions]);
+            const pendingRequests = requests.filter(r => r.status === 'pending');
+            const pendingUsers = profiles.filter(p => p.status === 'pending');
+            const activeProfiles = profiles.filter(p => !p.status || p.status === 'active');
+            const totalPending = pendingRequests.length + pendingUsers.length;
+
+            const handleLogin = (e) => {
+                e.preventDefault();
+                if(pinInput === selectedProfile.pin) {
+                    setCurrentUserData(selectedProfile);
+                    setSelectedProfile(null);
+                    setPinInput('');
+                    setLoginError('');
+                } else {
+                    setLoginError('รหัส PIN ไม่ถูกต้อง');
+                    setPinInput('');
+                }
+            };
+
+            const handleRegister = async (e) => {
+                e.preventDefault();
+                if(newPin.length < 4) return;
+                await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'users'), {
+                    name: newName, role: newRole, pin: newPin, status: 'pending', createdAt: serverTimestamp()
+                });
+                setNewName(''); setNewPin(''); setShowRegisterModal(false);
+                setRegisterSuccessMsg('ส่งคำขอเรียบร้อย รอการอนุมัติ');
+                setTimeout(() => setRegisterSuccessMsg(''), 5000);
+            };
+
+            const submitRequest = async (e) => {
+                e.preventDefault();
+                await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'requests'), {
+                    amount: parseFloat(amount), description, requester: currentUserData.name, requesterId: currentUserData.id, status: 'pending', createdAt: serverTimestamp(), type: 'expense'
+                });
+                setAmount(''); setDescription(''); setShowRequestModal(false);
+            };
+
+            const submitDeposit = async (e) => {
+                e.preventDefault();
+                const cat = INCOME_CATEGORIES.find(c => c.id === depositCategory);
+                await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'transactions'), {
+                    amount: parseFloat(amount), description, category: depositCategory, categoryLabel: cat?.label, performer: currentUserData.name, type: 'income', createdAt: serverTimestamp()
+                });
+                setAmount(''); setDescription(''); setShowDepositModal(false);
+            };
+
+            // --- Render: Login Screen ---
+            if (!currentUserData) {
+                return (
+                    <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4 relative overflow-hidden">
+                        <div className="absolute top-0 left-0 w-full h-full pointer-events-none">
+                            <div className="absolute top-[-10%] right-[-10%] w-[500px] h-[500px] bg-blue-100/50 rounded-full blur-3xl opacity-60"></div>
+                            <div className="absolute bottom-[-10%] left-[-10%] w-[400px] h-[400px] bg-indigo-100/50 rounded-full blur-3xl opacity-60"></div>
+                        </div>
+
+                        <div className="w-full max-w-lg relative z-10 animate-in">
+                            <div className="text-center mb-10">
+                                <div className="w-20 h-20 bg-gradient-to-tr from-blue-600 to-indigo-600 rounded-2xl flex items-center justify-center mx-auto mb-5 shadow-xl shadow-blue-500/20 rotate-3">
+                                    <Building2 className="text-white w-10 h-10" />
+                                </div>
+                                <h1 className="text-3xl font-bold text-slate-800 mb-2">Volvo Finance</h1>
+                                <p className="text-slate-500 font-medium">Service Center Fund Management</p>
+                            </div>
+
+                            {registerSuccessMsg && (
+                                <div className="mb-6 bg-emerald-50 border border-emerald-100 text-emerald-700 p-4 rounded-xl flex items-center gap-3 shadow-sm">
+                                    <CheckCircle2 size={16} /> <span className="text-sm font-medium">{registerSuccessMsg}</span>
+                                </div>
+                            )}
+
+                            <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 mb-8">
+                                {activeProfiles.map(profile => (
+                                    <button key={profile.id} onClick={() => { setSelectedProfile(profile); setLoginError(''); setPinInput(''); }}
+                                        className="bg-white p-5 rounded-2xl border border-slate-100 shadow-sm hover:shadow-lg hover:-translate-y-1 transition-all duration-200 flex flex-col items-center gap-4 group relative overflow-hidden">
+                                        <div className={`w-16 h-16 rounded-full flex items-center justify-center text-2xl font-bold transition-all ${profile.role === 'manager' ? 'bg-indigo-50 text-indigo-600 group-hover:bg-indigo-600 group-hover:text-white' : 'bg-slate-50 text-slate-600 group-hover:bg-slate-600 group-hover:text-white'}`}>
+                                            {profile.name.charAt(0)}
                                         </div>
-                                        <div className="text-right">
-                                            <p className={`font-bold text-sm ${t.type === 'income' ? 'text-emerald-600' : 'text-slate-800'}`}>{t.type === 'income' ? '+' : '-'}฿{t.amount.toLocaleString()}</p>
-                                            <div className="mt-1 flex justify-end"><StatusBadge status={t.status} /></div>
+                                        <div className="text-center w-full">
+                                            <div className="font-bold text-slate-800 truncate text-base mb-1">{profile.name}</div>
+                                            <Badge status={profile.role} />
+                                        </div>
+                                    </button>
+                                ))}
+                                <button onClick={() => setShowRegisterModal(true)} className="bg-slate-50 border-2 border-dashed border-slate-200 rounded-2xl p-4 flex flex-col items-center justify-center gap-3 text-slate-400 hover:text-slate-600 hover:border-slate-300 hover:bg-slate-100 transition-all min-h-[160px]">
+                                    <div className="w-12 h-12 rounded-full bg-white flex items-center justify-center shadow-sm"><PlusCircle className="w-6 h-6" /></div>
+                                    <span className="text-sm font-medium">สมัครใช้งาน</span>
+                                </button>
+                            </div>
+                        </div>
+
+                        {/* PIN Modal */}
+                        {selectedProfile && (
+                            <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-md z-50 flex items-center justify-center p-4">
+                                <div className="bg-white w-full max-w-xs p-8 rounded-2xl shadow-2xl animate-in">
+                                    <div className="text-center mb-6">
+                                        <h3 className="font-bold text-xl text-slate-800">ยินดีต้อนรับ, {selectedProfile.name}</h3>
+                                        <p className="text-slate-500 text-sm">ใส่รหัส PIN 4 หลัก</p>
+                                    </div>
+                                    <form onSubmit={handleLogin} className="space-y-6">
+                                        <div className="relative group">
+                                            <input autoFocus type="password" maxLength="6" value={pinInput} onChange={(e) => setPinInput(e.target.value)}
+                                                className="w-full text-center text-4xl tracking-[0.5em] py-3 border-b-2 border-slate-200 focus:border-indigo-500 outline-none bg-transparent font-mono text-slate-800" placeholder="••••" />
+                                            <Lock className="absolute left-4 top-5 text-slate-300 w-5 h-5" />
+                                        </div>
+                                        {loginError && <div className="bg-rose-50 text-rose-600 text-sm py-2 px-3 rounded-lg text-center font-medium">{loginError}</div>}
+                                        <div className="flex gap-3 mt-8">
+                                            <Button variant="secondary" onClick={() => setSelectedProfile(null)} className="flex-1 rounded-xl">ยกเลิก</Button>
+                                            <Button type="submit" className="flex-1 rounded-xl" disabled={!pinInput}>เข้าสู่ระบบ</Button>
+                                        </div>
+                                    </form>
+                                </div>
+                            </div>
+                        )}
+
+                        {/* Register Modal */}
+                        {showRegisterModal && (
+                            <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-md z-50 flex items-center justify-center p-4">
+                                <div className="bg-white w-full max-w-sm p-6 rounded-2xl shadow-2xl animate-in">
+                                    <div className="flex justify-between items-center mb-6">
+                                        <h3 className="text-xl font-bold flex items-center gap-2 text-slate-800"><UserPlus className="text-indigo-600" /> สมาชิกใหม่</h3>
+                                        <button onClick={() => setShowRegisterModal(false)}><XCircle size={20} className="text-slate-400" /></button>
+                                    </div>
+                                    <form onSubmit={handleRegister} className="space-y-5">
+                                        <div><label className="text-sm font-semibold mb-2 block">ชื่อเรียก</label><input type="text" value={newName} onChange={e=>setNewName(e.target.value)} className="w-full p-3 bg-slate-50 border rounded-xl" required /></div>
+                                        <div><label className="text-sm font-semibold mb-2 block">ตำแหน่ง</label><div className="flex gap-2"><button type="button" onClick={()=>setNewRole('staff')} className={`flex-1 p-2 rounded-lg border ${newRole==='staff'?'bg-slate-100 border-slate-400':'border-slate-200'}`}>พนักงาน</button><button type="button" onClick={()=>setNewRole('manager')} className={`flex-1 p-2 rounded-lg border ${newRole==='manager'?'bg-indigo-50 text-indigo-700 border-indigo-400':'border-slate-200'}`}>ผู้จัดการ</button></div></div>
+                                        <div><label className="text-sm font-semibold mb-2 block">PIN (4 หลัก)</label><input type="text" maxLength="4" value={newPin} onChange={e=>setNewPin(e.target.value)} className="w-full p-3 bg-slate-50 border rounded-xl text-center tracking-widest" required /></div>
+                                        <Button type="submit" className="w-full">ลงทะเบียน</Button>
+                                    </form>
+                                </div>
+                            </div>
+                        )}
+                    </div>
+                );
+            }
+
+            // --- Render: Main App ---
+            return (
+                <div className="min-h-screen bg-[#F8FAFC] font-sans text-slate-800 pb-24 md:pb-0 animate-in">
+                    <header className="bg-white/80 backdrop-blur-md border-b border-slate-200/60 sticky top-0 z-20">
+                        <div className="max-w-3xl mx-auto px-4 py-3 flex justify-between items-center">
+                            <div className="flex items-center gap-3">
+                                <div className="w-10 h-10 bg-gradient-to-br from-blue-600 to-indigo-700 rounded-xl flex items-center justify-center text-white font-bold text-lg shadow-lg">V</div>
+                                <div><h1 className="font-bold text-slate-800 text-sm md:text-base">Volvo Finance</h1><div className="flex items-center gap-2 text-xs text-slate-500"><span>{currentUserData.name}</span></div></div>
+                            </div>
+                            <button onClick={() => { setCurrentUserData(null); setActiveTab('dashboard'); }} className="p-2 hover:bg-slate-100 rounded-lg text-slate-500"><LogOut size={20} /></button>
+                        </div>
+                    </header>
+
+                    <main className="max-w-3xl mx-auto p-4 space-y-6">
+                        {/* Balance Card */}
+                        <div className="relative overflow-hidden bg-gradient-to-br from-[#0F172A] via-[#1E293B] to-[#0F172A] rounded-3xl p-6 text-white shadow-2xl">
+                             <div className="relative z-10 flex flex-col h-full justify-between min-h-[160px]">
+                                <div className="flex justify-between items-start">
+                                    <div className="flex items-center gap-2 text-slate-300 bg-white/5 px-3 py-1 rounded-full backdrop-blur-md border border-white/10"><CreditCard size={14} /> <span className="text-xs font-medium tracking-wide">Service Fund</span></div>
+                                    <Building2 className="text-slate-500 opacity-50" size={24} />
+                                </div>
+                                <div>
+                                    <div className="text-slate-400 text-xs font-medium mb-1 uppercase tracking-wider">Total Balance</div>
+                                    <div className="text-4xl sm:text-5xl font-bold tracking-tight text-white">{formatMoney(balance)}</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Actions */}
+                        <div className="grid grid-cols-2 gap-4">
+                            <button onClick={() => setShowRequestModal(true)} className="bg-white p-4 rounded-2xl shadow-sm border border-slate-100 flex items-center gap-4 hover:shadow-md transition-all">
+                                <div className="w-12 h-12 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center"><MinusCircle size={24} /></div>
+                                <div className="text-left"><div className="font-bold text-slate-800">ขอเบิกเงิน</div><div className="text-xs text-slate-500">Request Expense</div></div>
+                            </button>
+                            {currentUserData.role === 'manager' && (
+                                <button onClick={() => setShowDepositModal(true)} className="bg-white p-4 rounded-2xl shadow-sm border border-slate-100 flex items-center gap-4 hover:shadow-md transition-all">
+                                    <div className="w-12 h-12 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center"><PlusCircle size={24} /></div>
+                                    <div className="text-left"><div className="font-bold text-slate-800">เพิ่มรายรับ</div><div className="text-xs text-slate-500">Add Income</div></div>
+                                </button>
+                            )}
+                        </div>
+
+                        {/* Manager Alerts */}
+                        {currentUserData.role === 'manager' && totalPending > 0 && (
+                            <div onClick={() => setActiveTab('approvals')} className="bg-gradient-to-r from-amber-50 to-orange-50 border border-amber-100 rounded-2xl p-4 flex items-center justify-between cursor-pointer hover:shadow-md transition-all">
+                                <div className="flex items-center gap-4">
+                                    <div className="w-12 h-12 bg-white rounded-full flex items-center justify-center text-amber-500 shadow-sm"><AlertCircle size={24} /></div>
+                                    <div><h3 className="font-bold text-slate-800">มี {totalPending} เรื่องรออนุมัติ</h3><div className="text-xs text-slate-500">{pendingRequests.length} ขอเบิก • {pendingUsers.length} ผู้ใช้ใหม่</div></div>
+                                </div>
+                                <ChevronRight className="text-slate-400" />
+                            </div>
+                        )}
+
+                        {/* Tabs */}
+                        <div className="flex p-1 bg-slate-200/50 rounded-xl">
+                            {['dashboard', 'myRequests'].map(tab => (
+                                <button key={tab} onClick={() => setActiveTab(tab)} className={`flex-1 py-2 text-sm font-medium rounded-lg transition-all ${activeTab === tab ? 'bg-white text-blue-700 shadow-sm' : 'text-slate-500'}`}>
+                                    {tab === 'dashboard' ? 'ภาพรวม' : 'ประวัติของฉัน'}
+                                </button>
+                            ))}
+                            {currentUserData.role === 'manager' && (
+                                <button onClick={() => setActiveTab('approvals')} className={`flex-1 py-2 text-sm font-medium rounded-lg transition-all ${activeTab === 'approvals' ? 'bg-white text-blue-700 shadow-sm' : 'text-slate-500'}`}>
+                                    อนุมัติ {totalPending > 0 && `(${totalPending})`}
+                                </button>
+                            )}
+                        </div>
+
+                        {/* Content: Dashboard */}
+                        {activeTab === 'dashboard' && (
+                            <div className="space-y-3">
+                                <h3 className="text-sm font-bold text-slate-800 flex items-center gap-2"><History size={16} /> รายการล่าสุด</h3>
+                                {transactions.length === 0 ? <p className="text-center text-slate-400 py-8">ไม่มีรายการเคลื่อนไหว</p> : 
+                                    transactions.map(tx => (
+                                        <div key={tx.id} className="bg-white p-4 rounded-2xl flex justify-between items-center border border-slate-100 shadow-sm">
+                                            <div className="flex items-center gap-4">
+                                                <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${tx.type === 'income' ? 'bg-emerald-50 text-emerald-600' : 'bg-slate-50 text-slate-500'}`}>{tx.type === 'income' ? <TrendingUp size={20} /> : <TrendingDown size={20} />}</div>
+                                                <div><p className="font-bold text-slate-800">{tx.description}</p><p className="text-xs text-slate-400">{formatDate(tx.createdAt)} • {tx.performer}</p></div>
+                                            </div>
+                                            <span className={`font-bold ${tx.type === 'income' ? 'text-emerald-600' : 'text-slate-800'}`}>{tx.type === 'income' ? '+' : '-'}{formatMoney(tx.amount)}</span>
+                                        </div>
+                                    ))
+                                }
+                            </div>
+                        )}
+
+                        {/* Content: My Requests */}
+                        {activeTab === 'myRequests' && (
+                            <div className="space-y-3">
+                                {requests.filter(r => currentUserData.role === 'manager' || r.requester === currentUserData.name).map(req => (
+                                    <div key={req.id} className="bg-white p-4 rounded-2xl border border-slate-100 shadow-sm">
+                                        <div className="flex justify-between mb-2">
+                                            <p className="font-bold text-slate-800">{req.description}</p>
+                                            <Badge status={req.status} />
+                                        </div>
+                                        <div className="flex justify-between items-end text-sm">
+                                            <span className="text-slate-400">{formatDate(req.createdAt)}</span>
+                                            <span className="font-bold text-lg">{formatMoney(req.amount)}</span>
                                         </div>
                                     </div>
-                                    {t.status === 'pending' && currentUserRole === 'manager' && (
-                                        <div className="flex gap-2 mt-3 pt-3 border-t border-slate-200/50">
-                                            <button onClick={() => handleApprove(t.id)} className="flex-1 bg-emerald-600 text-white text-xs py-2 rounded-lg font-semibold hover:bg-emerald-700 shadow-sm">อนุมัติทันที</button>
-                                            <button onClick={() => handleReject(t.id)} className="flex-1 bg-white border border-slate-200 text-slate-600 text-xs py-2 rounded-lg font-medium hover:bg-slate-50">ปฏิเสธ</button>
+                                ))}
+                            </div>
+                        )}
+
+                        {/* Content: Approvals */}
+                        {activeTab === 'approvals' && currentUserData.role === 'manager' && (
+                            <div className="space-y-6">
+                                {pendingUsers.length > 0 && (
+                                    <div className="space-y-3">
+                                        <h4 className="text-sm font-bold text-slate-700">ผู้ใช้ใหม่ ({pendingUsers.length})</h4>
+                                        {pendingUsers.map(u => (
+                                            <div key={u.id} className="bg-blue-50/50 p-4 rounded-2xl border border-blue-100 flex justify-between items-center">
+                                                <div className="flex items-center gap-3"><div className="w-10 h-10 bg-white rounded-full flex items-center justify-center font-bold text-blue-600">{u.name.charAt(0)}</div><div><p className="font-bold text-slate-800">{u.name}</p><span className="text-xs bg-slate-100 px-2 py-0.5 rounded text-slate-600">{u.role}</span></div></div>
+                                                <div className="flex gap-2"><Button onClick={() => updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'users', u.id), { status: 'active' })} variant="primary" className="py-1 px-3 text-xs h-8">อนุมัติ</Button><Button onClick={() => deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'users', u.id))} variant="danger" className="py-1 px-3 text-xs h-8">ลบ</Button></div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                )}
+                                <div className="space-y-3">
+                                    <h4 className="text-sm font-bold text-slate-700">คำขอเบิก ({pendingRequests.length})</h4>
+                                    {pendingRequests.map(req => (
+                                        <div key={req.id} className="bg-white p-4 rounded-2xl border border-l-4 border-l-amber-400 border-slate-100 shadow-sm">
+                                            <div className="flex justify-between mb-3">
+                                                <div><p className="font-bold text-lg text-slate-800">{req.description}</p><p className="text-xs text-slate-400 mt-1">โดย {req.requester}</p></div>
+                                                <div className="text-right"><p className="font-bold text-xl">{formatMoney(req.amount)}</p><span className="text-[10px] bg-amber-50 text-amber-600 px-2 py-0.5 rounded-full font-bold">รออนุมัติ</span></div>
+                                            </div>
+                                            <div className="flex gap-2 pt-2 border-t border-slate-50">
+                                                <Button onClick={async () => {
+                                                    await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'transactions'), { amount: parseFloat(req.amount), description: req.description, performer: req.requester, approver: currentUserData.name, type: 'expense', createdAt: serverTimestamp() });
+                                                    await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'requests', req.id), { status: 'approved' });
+                                                }} variant="success" className="flex-1 py-2">อนุมัติ</Button>
+                                                <Button onClick={() => updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'requests', req.id), { status: 'rejected' })} variant="danger" className="flex-1 py-2">ปฏิเสธ</Button>
+                                            </div>
                                         </div>
-                                    )}
-                                    {(currentUserRole === 'manager' || (currentUserRole === 'staff' && t.status === 'pending')) && (
-                                        <div className="flex justify-end mt-2"><button onClick={() => handleDelete(t.id)} className="text-[10px] text-slate-400 hover:text-red-500 flex items-center gap-1 transition-colors"><Trash2 size={12} /> ลบรายการ</button></div>
-                                    )}
+                                    ))}
                                 </div>
-                            ))}
+                            </div>
+                        )}
+                    </main>
+
+                    {/* Modals for Requests & Deposits would go here (Simplified for brevity in single file, reusing logic above) */}
+                    {/* ... (Modal logic is handled by state showRequestModal/showDepositModal rendering inline above if we wanted, but for cleaner code kept in main logic) ... */}
+                    {/* Re-implementing simplified modals inline for single-file portability */}
+                    
+                    {showRequestModal && (
+                        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+                            <div className="bg-white w-full max-w-sm p-6 rounded-2xl shadow-xl animate-in">
+                                <h3 className="font-bold text-lg mb-4">ขอเบิกเงิน</h3>
+                                <input autoFocus className="w-full p-3 border rounded-xl mb-3" placeholder="รายการ" value={description} onChange={e=>setDescription(e.target.value)} />
+                                <input type="number" className="w-full p-3 border rounded-xl mb-6" placeholder="จำนวนเงิน" value={amount} onChange={e=>setAmount(e.target.value)} />
+                                <div className="flex gap-2"><Button onClick={()=>setShowRequestModal(false)} variant="secondary" className="flex-1">ยกเลิก</Button><Button onClick={submitRequest} className="flex-1">ส่ง</Button></div>
+                            </div>
                         </div>
-                    </div>
-                ))}
-                {getFilteredTransactions().length === 0 && <div className="text-center py-10"><div className="w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center mx-auto text-slate-300 mb-3"><Filter size={24} /></div><p className="text-slate-400 text-sm">ไม่พบรายการ</p></div>}
-            </div>
-          </div>
-        )}
-      </main>
+                    )}
+                    
+                    {showDepositModal && (
+                        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+                            <div className="bg-white w-full max-w-sm p-6 rounded-2xl shadow-xl animate-in">
+                                <h3 className="font-bold text-lg mb-4">เพิ่มรายรับ</h3>
+                                <select className="w-full p-3 border rounded-xl mb-3 bg-white" value={depositCategory} onChange={e=>setDepositCategory(e.target.value)}>
+                                    {INCOME_CATEGORIES.map(c => <option key={c.id} value={c.id}>{c.icon} {c.label}</option>)}
+                                </select>
+                                <input className="w-full p-3 border rounded-xl mb-3" placeholder="รายละเอียด" value={description} onChange={e=>setDescription(e.target.value)} />
+                                <input type="number" className="w-full p-3 border rounded-xl mb-6" placeholder="จำนวนเงิน" value={amount} onChange={e=>setAmount(e.target.value)} />
+                                <div className="flex gap-2"><Button onClick={()=>setShowDepositModal(false)} variant="secondary" className="flex-1">ยกเลิก</Button><Button onClick={submitDeposit} variant="success" className="flex-1">ยืนยัน</Button></div>
+                            </div>
+                        </div>
+                    )}
 
-      {/* MODALS */}
-      {/* Transaction Form Modal */}
-      {showModal && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-end sm:items-center justify-center p-0 sm:p-4">
-          <div className="bg-white w-full sm:max-w-md rounded-t-2xl sm:rounded-2xl p-6 animate-in slide-in-from-bottom duration-200 shadow-2xl">
-            <div className="flex justify-between items-center mb-6">
-              <h3 className="text-xl font-bold text-slate-800 flex items-center gap-2">{modalType === 'income' ? 'บันทึกรายรับ' : 'ขอเบิกค่าใช้จ่าย'}</h3>
-              <button onClick={() => setShowModal(false)} className="bg-slate-100 p-2 rounded-full text-slate-500 hover:bg-slate-200"><XCircle size={20} /></button>
-            </div>
-            <form onSubmit={handleAddTransaction} className="space-y-4">
-              <div><label className="block text-xs font-bold text-slate-500 uppercase mb-1.5">รายการ</label><input name="title" required placeholder="..." className="w-full px-4 py-3 rounded-xl border border-slate-200 bg-slate-50 focus:bg-white focus:ring-2 focus:ring-blue-500 outline-none" /></div>
-              <div className="grid grid-cols-2 gap-4">
-                <div><label className="block text-xs font-bold text-slate-500 uppercase mb-1.5">จำนวนเงิน</label><input name="amount" type="number" required min="1" placeholder="0.00" className="w-full px-4 py-3 rounded-xl border border-slate-200 bg-slate-50 focus:bg-white focus:ring-2 focus:ring-blue-500 outline-none font-bold" /></div>
-                <div><label className="block text-xs font-bold text-slate-500 uppercase mb-1.5">หมวดหมู่</label><select name="category" className="w-full px-4 py-3 rounded-xl border border-slate-200 bg-slate-50 focus:bg-white focus:ring-2 focus:ring-blue-500 outline-none">
-                    {modalType === 'income' ? <><option value="service">ค่าบริการ</option><option value="parts">ค่าอะไหล่</option><option value="other">อื่นๆ</option></> : <><option value="parts">อะไหล่สำรอง</option><option value="tools">เครื่องมือช่าง</option><option value="transport">ค่าเดินทาง</option><option value="welfare">สวัสดิการ</option><option value="other">เบ็ดเตล็ด</option></>}
-                </select></div>
-              </div>
-              {modalType === 'expense' && (<div><label className="block text-xs font-bold text-slate-500 uppercase mb-1.5">ผู้ขอเบิก</label><input name="requester" defaultValue={currentUserRole === 'manager' ? "คุณเพิร์ธ (ผจก.)" : ""} placeholder="ชื่อผู้เบิก..." className="w-full px-4 py-3 rounded-xl border border-slate-200 bg-slate-50" /></div>)}
-              <button type="submit" className={`w-full py-3.5 rounded-xl text-white font-bold shadow-lg mt-2 ${modalType === 'income' ? 'bg-emerald-600' : 'bg-rose-600'}`}>บันทึกรายการ</button>
-            </form>
-          </div>
-        </div>
-      )}
+                </div>
+            );
+        };
 
-      {/* Auth Modal */}
-      {showAuthModal && (
-        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-[60] flex items-center justify-center p-4">
-          <div className="bg-white w-full max-w-xs rounded-2xl p-6 shadow-2xl">
-            <div className="text-center mb-6"><Lock size={32} className="mx-auto text-blue-900 mb-4"/><h3 className="text-lg font-bold">ยืนยันตัวตน</h3><p className="text-xs text-slate-400">ใส่รหัสผ่านเข้าโหมดผู้จัดการ</p></div>
-            <form onSubmit={handleAuthSubmit}>
-              <input type="password" value={passwordInput} onChange={(e) => setPasswordInput(e.target.value)} className="w-full px-4 py-3 rounded-xl border border-slate-200 text-center text-lg tracking-widest mb-4" placeholder="PIN Code" maxLength={6} autoFocus />
-              {authError && <p className="text-red-500 text-xs text-center mb-2">{authError}</p>}
-              <div className="flex gap-2"><button type="button" onClick={() => setShowAuthModal(false)} className="flex-1 py-2 rounded-xl border border-slate-200 text-sm">ยกเลิก</button><button type="submit" className="flex-1 py-2 rounded-xl bg-blue-900 text-white text-sm font-bold">ยืนยัน</button></div>
-            </form>
-          </div>
-        </div>
-      )}
-
-      {/* Bottom Nav */}
-      <div className="fixed bottom-0 left-0 right-0 bg-white/90 backdrop-blur-md border-t border-slate-200 px-6 py-2 flex justify-around items-center text-slate-400 max-w-md mx-auto z-40 pb-safe">
-        <button className={`flex flex-col items-center gap-1 p-2 rounded-xl transition-all ${view === 'dashboard' ? 'text-blue-900 bg-blue-50' : ''}`} onClick={() => setView('dashboard')}><PieChart size={24} strokeWidth={view === 'dashboard'?2.5:2}/><span className="text-[10px] font-bold">ภาพรวม</span></button>
-        <div className="w-px h-8 bg-slate-200"></div>
-        <button className={`flex flex-col items-center gap-1 p-2 rounded-xl transition-all ${view === 'requests' ? 'text-blue-900 bg-blue-50' : ''}`} onClick={() => setView('requests')}><div className="relative"><Activity size={24} strokeWidth={view === 'requests'?2.5:2}/>{pendingCount > 0 && <span className="absolute -top-0.5 -right-0.5 w-2.5 h-2.5 bg-red-500 rounded-full border-2 border-white animate-pulse"></span>}</div><span className="text-[10px] font-bold">กิจกรรม</span></button>
-      </div>
-      <div className="h-6 bg-white/90 max-w-md mx-auto fixed bottom-0 left-0 right-0 z-30"></div>
-
-      {/* Components Definition (Reused) */}
-      {/* ... (CategoryBar, StatusBadge are reused implicitly by rendering logic above) ... */}
-    </div>
-  );
-};
-
-// Helper Components
-const CategoryBar = ({ label, amount, total, colorClass }) => {
-    const percent = Math.min((amount / total) * 100, 100);
-    return (<div className="mb-3"><div className="flex justify-between text-xs mb-1"><span className="text-slate-600 font-medium">{label}</span><span className="text-slate-800 font-bold">{Math.round(percent)}% (฿{amount.toLocaleString()})</span></div><div className="w-full bg-slate-100 rounded-full h-2"><div className={`h-2 rounded-full ${colorClass}`} style={{ width: `${percent}%` }}></div></div></div>);
-};
-const StatusBadge = ({ status }) => {
-    const styles = { approved: 'bg-emerald-100 text-emerald-700 border-emerald-200', pending: 'bg-amber-100 text-amber-700 border-amber-200', rejected: 'bg-red-100 text-red-700 border-red-200' };
-    const labels = { approved: 'อนุมัติ', pending: 'รออนุมัติ', rejected: 'ปัดตก' };
-    return (<span className={`text-[10px] px-1.5 py-0.5 rounded border font-medium ${styles[status]}`}>{labels[status]}</span>);
-};
-
-export default App;
+        const root = createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
+</body>
+</html>
