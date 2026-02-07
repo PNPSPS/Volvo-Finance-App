@@ -379,9 +379,19 @@
                                                         <div className="text-xs text-slate-500 uppercase">{p.role} • {p.status}</div>
                                                     </div>
                                                 </div>
-                                                <button onClick={() => deleteUser(p.id)} className="p-2 text-rose-500 hover:bg-rose-100 rounded-lg transition-colors">
-                                                    <Icon name="trash" size={18} />
-                                                </button>
+                                                {/* Allow deletion if user is manager, or if in Admin Mode (userData is null) */}
+                                                <div className="flex gap-1">
+                                                    {p.status === 'pending' && (
+                                                        <button onClick={() => updateUserStatus(p.id, 'active')} className="p-2 text-emerald-600 hover:bg-emerald-100 rounded-lg transition-colors">
+                                                            <Icon name="check" size={18} />
+                                                        </button>
+                                                    )}
+                                                    {(!userData || userData.id !== p.id) && (
+                                                        <button onClick={() => deleteUser(p.id)} className="p-2 text-rose-500 hover:bg-rose-100 rounded-lg transition-colors">
+                                                            <Icon name="trash" size={18} />
+                                                        </button>
+                                                    )}
+                                                </div>
                                             </div>
                                         ))}
                                     </div>
@@ -529,12 +539,10 @@
                                                     <div className="text-xs text-slate-500 uppercase">{p.role} • {p.status}</div>
                                                 </div>
                                             </div>
-                                            {/* Allow deletion if user is manager, or if in Admin Mode (userData is null) */}
-                                            {(!userData || userData.id !== p.id) && (
-                                                <button onClick={() => deleteUser(p.id)} className="p-2 text-rose-500 hover:bg-rose-100 rounded-lg transition-colors">
-                                                    <Icon name="trash" size={18} />
-                                                </button>
-                                            )}
+                                            <div className="flex gap-1">
+                                                {p.status === 'pending' && <button onClick={()=>updateUserStatus(p.id, 'active')} className="p-2 text-emerald-600 bg-emerald-100 rounded-lg"><Icon name="check"/></button>}
+                                                {userData.id !== p.id && <button onClick={()=>deleteUser(p.id)} className="p-2 text-rose-600 hover:bg-rose-100 rounded-lg"><Icon name="trash"/></button>}
+                                            </div>
                                         </div>
                                     ))}
                                 </div>
