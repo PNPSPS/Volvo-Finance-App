@@ -3,28 +3,57 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Volvo Finance Service (Auto-Login)</title>
+    <title>Volvo Finance Service (Modern)</title>
     
-    <!-- 1. โหลด Styles -->
+    <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600&display=swap" rel="stylesheet">
     
-    <style> 
-        body { font-family: 'Prompt', sans-serif; background-color: #f1f5f9; }
-        .loading { display: flex; justify-content: center; align-items: center; height: 100vh; color: #64748b; }
-        .error-box { padding: 20px; background: #fee2e2; color: #b91c1c; border: 1px solid #fca5a5; margin: 20px; border-radius: 8px; font-family: monospace; }
-        #root { min-height: 100vh; }
-    </style>
-
-    <!-- 2. โหลด Libraries จากแหล่งที่เสถียรที่สุด (Cloudflare) -->
+    <!-- React & ReactDOM (UMD - Works locally) -->
     <script crossorigin src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
     <script crossorigin src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
-    <script crossorigin src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.5/babel.min.js"></script>
+    
+    <!-- Babel -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.5/babel.min.js"></script>
 
-    <!-- 3. โหลด Firebase Compat (จำเป็นสำหรับไฟล์เดี่ยว) -->
+    <!-- Firebase Compat -->
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+
+    <!-- Google Font -->
+    <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <style> 
+        body { 
+            font-family: 'Prompt', sans-serif; 
+            /* ภาพพื้นหลัง Workshop ที่ทันสมัยและสะอาดตา */
+            background-image: url('https://images.unsplash.com/photo-1625047509168-a7026f36de04?q=80&w=2564&auto=format&fit=crop');
+            background-size: cover;
+            background-position: center;
+            background-attachment: fixed;
+            background-repeat: no-repeat;
+            min-height: 100vh;
+        }
+        #root {
+            /* Glassmorphism Effect */
+            background-color: rgba(255, 255, 255, 0.75);
+            min-height: 100vh;
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+        }
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
+        ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+        
+        .glass-card {
+            background: rgba(255, 255, 255, 0.8);
+            backdrop-filter: blur(8px);
+            border: 1px solid rgba(255, 255, 255, 0.6);
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
+        }
+    </style>
 </head>
 <body>
     <div id="error-display"></div>
@@ -32,19 +61,16 @@
 
     <!-- ปุ่มฉุกเฉินสำหรับล้างค่า -->
     <button onclick="localStorage.removeItem('vfs_firebase_config'); window.location.reload();" style="position: fixed; bottom: 10px; right: 10px; opacity: 0.5; font-size: 10px; background: #eee; border: none; padding: 5px; cursor: pointer; z-index: 9999;">
-        Reset Config (Emergency)
+        Reset Config
     </button>
 
     <script>
-        // ระบบดักจับ Error ก่อนเริ่มโปรแกรม (ป้องกันจอขาว)
         window.onerror = function(message, source, lineno, colno, error) {
             document.getElementById('error-display').innerHTML = `
-                <div class="error-box">
+                <div style="padding: 20px; background: #fee2e2; color: #b91c1c; border: 1px solid #fca5a5; margin: 20px; border-radius: 8px; font-family: sans-serif;">
                     <h3>⚠️ เกิดข้อผิดพลาด (System Error)</h3>
                     <p><b>Message:</b> ${message}</p>
-                    <p><b>Source:</b> ${source}:${lineno}</p>
-                    <p>กรุณาแคปหน้าจอนี้ส่งให้ผู้ดูแลระบบ</p>
-                    <button onclick="localStorage.clear(); window.location.reload();" style="margin-top:10px; padding:5px 10px;">ลองกดปุ่มนี้เพื่อล้างค่า (Clear Data)</button>
+                    <button onclick="localStorage.clear(); window.location.reload();" style="margin-top:10px; padding:5px 10px; cursor:pointer;">ล้างค่าและรีโหลด</button>
                 </div>
             `;
             return true;
@@ -56,14 +82,12 @@
         // 🟢 ส่วนตั้งค่า: นำรหัส Firebase Config มาวางแทนที่ 
 const firebaseConfig = 
 {apiKey:"AIzaSyAmm8CJj4yU6Qclr1_l8yVwcQptOtnh0rE",authDomain:"volvo-finance.firebaseapp.com",projectId: "volvo-finance",storageBucket: "volvo-finance.firebasestorage.app",messagingSenderId: "713687952336",appId: "1:713687952336:web:00b6a228b36098cf5fe7d5",measurementId: "G-HFEWYL8GZ9"}; 
-
-        // ตัวอย่าง: const FIREBASE_CONFIG = { apiKey: "AIza...", authDomain: "..." };
+ ตรงนี้เพื่อข้ามหน้าจอตั้งค่า
         // ==========================================
         const FIREBASE_CONFIG = null; 
         
-        // ตรวจสอบความพร้อมของ Library
         if (!window.React || !window.ReactDOM || !window.firebase) {
-            throw new Error("โหลดเครื่องมือไม่ครบ (Internet อาจมีปัญหา หรือโดนบล็อก)");
+            throw new Error("กำลังโหลดเครื่องมือ... หากค้างหน้านี้นานเกินไป กรุณาตรวจสอบอินเทอร์เน็ต");
         }
 
         const { useState, useEffect, useMemo } = React;
@@ -83,7 +107,9 @@ const firebaseConfig =
                 trash: <g><polyline points="3 6 5 6 21 6" /><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" /></g>,
                 refresh: <g><polyline points="23 4 23 10 17 10" /><polyline points="1 20 1 14 7 14" /><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15" /></g>,
                 x: <g><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></g>,
-                check: <polyline points="20 6 9 17 4 12" />
+                check: <polyline points="20 6 9 17 4 12" />,
+                pieChart: <path d="M21.21 15.89A10 10 0 1 1 8 2.83M22 12A10 10 0 0 0 12 2v10z" />,
+                tag: <path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82zM7 7h.01" />
             };
             return (
                 <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
@@ -107,38 +133,38 @@ const firebaseConfig =
                     if (!json || !json.apiKey) throw new Error("ไม่พบ apiKey");
                     onSave(json);
                 } catch (e) {
-                    setErr('รูปแบบไม่ถูกต้อง: ก๊อปปี้มาทั้งบรรทัด const firebaseConfig = { ... } เลยครับ');
+                    setErr('รูปแบบไม่ถูกต้อง');
                 }
             };
 
             return (
-                <div className="flex flex-col items-center justify-center min-h-screen bg-slate-100 p-4">
-                    <div className="bg-white p-8 rounded-xl shadow-lg w-full max-w-md">
-                        <h2 className="text-xl font-bold mb-4 text-center">ตั้งค่าการเชื่อมต่อ</h2>
-                        <textarea className="w-full h-40 p-3 border rounded mb-4 text-xs font-mono" 
+                <div className="flex flex-col items-center justify-center min-h-screen p-4">
+                    <div className="bg-white/90 backdrop-blur-xl p-8 rounded-2xl shadow-xl w-full max-w-md border border-white">
+                        <h2 className="text-xl font-bold mb-4 text-center text-slate-800">ตั้งค่าการเชื่อมต่อ</h2>
+                        <textarea className="w-full h-40 p-3 border rounded-xl mb-4 text-xs font-mono bg-white/50" 
                             placeholder='วางโค้ด firebaseConfig ที่นี่...' 
                             value={input} onChange={e=>setInput(e.target.value)}></textarea>
                         {err && <div className="text-red-500 text-xs mb-2">{err}</div>}
-                        <button onClick={save} className="w-full bg-blue-600 text-white py-2 rounded hover:bg-blue-700">บันทึก</button>
-                        <p className="text-xs text-center text-slate-400 mt-4">
-                            *เพื่อไม่ต้องกรอกใหม่ทุกครั้ง: ให้เปิดไฟล์ด้วย Notepad แล้วนำโค้ดไปวางที่ตัวแปร FIREBASE_CONFIG ด้านบนสุด
-                        </p>
+                        <button onClick={save} className="w-full bg-blue-600 text-white py-3 rounded-xl hover:bg-blue-700 shadow-lg font-bold">บันทึก</button>
                     </div>
                 </div>
             );
         };
 
+        const INCOME_CATEGORIES = [
+            { id: 'scrap', label: 'ขายของเก่า/รีไซเคิล', color: 'bg-orange-100 text-orange-700', icon: '♻️' },
+            { id: 'contribution', label: 'เงินสมทบ/บริจาค', color: 'bg-indigo-100 text-indigo-700', icon: '🤝' },
+            { id: 'fine', label: 'ค่าปรับ', color: 'bg-rose-100 text-rose-700', icon: '⚠️' },
+            { id: 'activity', label: 'กิจกรรมพิเศษ', color: 'bg-purple-100 text-purple-700', icon: '🎉' },
+            { id: 'other', label: 'อื่นๆ', color: 'bg-slate-100 text-slate-700', icon: '📦' }
+        ];
+
         // --- Main App ---
         const App = () => {
             const [config, setConfig] = useState(() => {
-                // 1. ลองใช้ค่าที่ฝังไว้ในโค้ดก่อน
-                if (FIREBASE_CONFIG && typeof FIREBASE_CONFIG === 'object') {
-                    return FIREBASE_CONFIG;
-                }
-                // 2. ถ้าไม่มี ให้ลองดึงจาก Local Storage
                 try {
                     const saved = localStorage.getItem('vfs_firebase_config');
-                    return saved ? JSON.parse(saved) : null;
+                    return FIREBASE_CONFIG || (saved ? JSON.parse(saved) : null);
                 } catch { return null; }
             });
 
@@ -155,30 +181,25 @@ const firebaseConfig =
             const [inputs, setInputs] = useState({});
             const [selectedProfile, setSelectedProfile] = useState(null);
 
-            // 1. Initialize Firebase
+            // Initialize Firebase
             useEffect(() => {
                 if (!config) return;
                 try {
                     if (!firebase.apps.length) firebase.initializeApp(config);
                     
                     const auth = firebase.auth();
-                    const db = firebase.firestore();
-                    
                     auth.onAuthStateChanged(u => {
-                        if (!u) auth.signInAnonymously().catch(e => alert("Auth Error: " + e.message));
+                        if (!u) auth.signInAnonymously().catch(e => console.error("Auth Error", e));
                         setUser(u);
                     });
-
                     setInit(true);
                 } catch (e) {
                     alert("Firebase Init Failed: " + e.message);
                     localStorage.removeItem('vfs_firebase_config');
-                    // ถ้า config ฝังมาผิด อาจต้องแก้โค้ด
-                    if(FIREBASE_CONFIG) alert("คำเตือน: รหัส FIREBASE_CONFIG ที่ฝังไว้ไม่ถูกต้อง");
                 }
             }, [config]);
 
-            // 2. Data Listening
+            // Data Listening
             useEffect(() => {
                 if (!user || !init) return;
                 const db = firebase.firestore();
@@ -189,7 +210,7 @@ const firebaseConfig =
                 });
 
                 const unsubTx = db.collection('app_data').doc(appId).collection('transactions')
-                    .orderBy('createdAt', 'desc').limit(50).onSnapshot(snap => {
+                    .orderBy('createdAt', 'desc').limit(100).onSnapshot(snap => {
                     setTransactions(snap.docs.map(d => ({id: d.id, ...d.data()})));
                 });
 
@@ -214,8 +235,8 @@ const firebaseConfig =
                     await db.collection('app_data').doc(appId).collection('users').add({
                         name: 'เพิร์ธ', role: 'manager', pin: '2121', status: 'active', createdAt: new Date()
                     });
-                    alert('สร้างเรียบร้อย! ลองรีเฟรชถ้ายังไม่ขึ้น');
-                } catch(e) { alert("Error: " + e.message + "\n(เช็ค Rules ใน Firebase)"); }
+                    alert('สร้างเรียบร้อย!');
+                } catch(e) { alert("Error: " + e.message); }
             };
 
             const login = () => {
@@ -229,7 +250,7 @@ const firebaseConfig =
             };
 
             const verifyAdmin = () => {
-                if (inputs.adminPin === '2121') { // Simple Manager PIN Check for Quick Access
+                if (inputs.adminPin === '2121') {
                     setModals({...modals, adminAuth: false, manage: true});
                     setInputs({});
                 } else {
@@ -256,9 +277,10 @@ const firebaseConfig =
             };
 
             const submitDeposit = async () => {
+                const category = INCOME_CATEGORIES.find(c => c.id === depositCategory) || INCOME_CATEGORIES[4];
                 await db.collection('app_data').doc(appId).collection('transactions').add({
-                    amount: parseFloat(inputs.amount), description: inputs.desc, category: 'income',
-                    performer: userData.name, type: 'income', createdAt: new Date()
+                    amount: parseFloat(inputs.amount), description: inputs.desc, category: depositCategory,
+                    categoryLabel: category.label, performer: userData.name, type: 'income', createdAt: new Date()
                 });
                 setModals({...modals, deposit: false}); setInputs({});
             };
@@ -281,63 +303,95 @@ const firebaseConfig =
                 await db.collection('app_data').doc(appId).collection('users').doc(id).update({status});
             };
 
+            // Calculations
             const balance = transactions.reduce((acc, t) => t.type === 'income' ? acc + t.amount : acc - t.amount, 0);
             const pendingUsers = profiles.filter(p => p.status === 'pending');
             const pendingRequests = requests.filter(r => r.status === 'pending');
             const formatMoney = (n) => new Intl.NumberFormat('th-TH', {style:'currency', currency:'THB'}).format(n);
 
+            // Income Breakdown Calculation
+            const incomeBreakdown = useMemo(() => {
+                const summary = {};
+                // Init with 0
+                INCOME_CATEGORIES.forEach(cat => summary[cat.id] = 0);
+                
+                transactions.forEach(t => {
+                    if (t.type === 'income') {
+                        const catId = t.category || 'other';
+                        summary[catId] = (summary[catId] || 0) + t.amount;
+                    }
+                });
+
+                return INCOME_CATEGORIES.map(cat => ({
+                    ...cat,
+                    total: summary[cat.id] || 0,
+                    percent: (summary[cat.id] || 0) > 0 ? ((summary[cat.id] || 0) / transactions.filter(t=>t.type==='income').reduce((a,b)=>a+b.amount,0)) * 100 : 0
+                })).sort((a,b) => b.total - a.total);
+            }, [transactions]);
+
             // --- Views ---
             if (!userData) {
                 const activeUsers = profiles.filter(p => p.status === 'active');
                 return (
-                    <div className="min-h-screen flex flex-col items-center justify-center p-4 bg-slate-50">
-                        <div className="mb-8 text-center">
-                            <div className="bg-blue-600 text-white w-16 h-16 rounded-xl flex items-center justify-center mx-auto mb-4 shadow-lg"><Icon name="building" size={32}/></div>
-                            <h1 className="text-2xl font-bold text-slate-800">Volvo Finance</h1>
-                        </div>
+                    <div className="min-h-screen flex flex-col items-center justify-center p-4">
+                        <div className="w-full max-w-lg mb-8 relative z-10 animate-in">
+                            <div className="text-center mb-8">
+                                <div className="w-24 h-24 bg-gradient-to-tr from-blue-700 to-slate-800 rounded-3xl flex items-center justify-center mx-auto mb-5 shadow-2xl shadow-blue-900/40 rotate-3 border-4 border-white/20">
+                                    <Icon name="building" size={48} className="text-white"/>
+                                </div>
+                                <h1 className="text-3xl font-bold text-slate-800 drop-shadow-sm tracking-tight">Volvo Finance</h1>
+                                <p className="text-slate-600 font-medium mt-1">Service Center Management</p>
+                            </div>
 
-                        {activeUsers.length > 0 ? (
-                            <div className="grid grid-cols-2 gap-4 w-full max-w-sm mb-6">
-                                {activeUsers.map(p => (
-                                    <button key={p.id} onClick={() => setSelectedProfile(p)} className="bg-white p-4 rounded-xl border hover:border-blue-500 shadow-sm flex flex-col items-center relative">
-                                        <div className="w-12 h-12 bg-slate-100 rounded-full flex items-center justify-center font-bold text-slate-600 mb-2">{p.name[0]}</div>
-                                        <div className="font-bold">{p.name}</div>
-                                        <div className="text-xs text-slate-400 uppercase">{p.role}</div>
+                            {activeUsers.length > 0 ? (
+                                <div className="grid grid-cols-2 gap-4 mb-6">
+                                    {activeUsers.map(p => (
+                                        <button key={p.id} onClick={() => setSelectedProfile(p)} className="glass-card p-5 rounded-2xl flex flex-col items-center group transition-all hover:scale-[1.02] hover:bg-white/90">
+                                            <div className="w-14 h-14 bg-gradient-to-br from-slate-100 to-slate-200 rounded-full flex items-center justify-center font-bold text-lg text-slate-600 mb-3 shadow-inner group-hover:from-blue-100 group-hover:to-blue-200 group-hover:text-blue-700 transition-colors">
+                                                {p.name[0]}
+                                            </div>
+                                            <div className="font-bold text-slate-800 text-lg">{p.name}</div>
+                                            <div className="text-xs text-slate-500 uppercase font-semibold tracking-wide mt-1">{p.role}</div>
+                                        </button>
+                                    ))}
+                                    <button onClick={() => setModals({...modals, register: true})} className="border-2 border-dashed border-slate-300/60 p-4 rounded-2xl flex flex-col items-center justify-center text-slate-500 hover:bg-white/40 hover:text-blue-600 hover:border-blue-400 transition-all">
+                                        <Icon name="plus" size={32} className="mb-2 opacity-50"/> <span className="font-medium">สมัครใหม่</span>
                                     </button>
-                                ))}
-                                <button onClick={() => setModals({...modals, register: true})} className="border-2 border-dashed border-slate-300 p-4 rounded-xl flex flex-col items-center justify-center text-slate-400 hover:bg-slate-100">
-                                    <Icon name="plus" size={24} className="mb-2"/> สมัครใหม่
-                                </button>
-                            </div>
-                        ) : (
-                            <div className="text-center mb-6">
-                                <p className="text-slate-500 mb-4">ยังไม่มีผู้ใช้งานในระบบ</p>
-                                <button onClick={restoreAdmin} className="bg-blue-600 text-white px-6 py-3 rounded-lg shadow-lg font-bold flex items-center gap-2 mx-auto">
-                                    <Icon name="user" /> สร้างผู้จัดการ (เพิร์ธ)
-                                </button>
-                            </div>
-                        )}
+                                </div>
+                            ) : (
+                                <div className="text-center mb-6 p-6 glass-card rounded-2xl">
+                                    <p className="text-slate-500 mb-4">ยังไม่มีผู้ใช้งานในระบบ</p>
+                                    <button onClick={restoreAdmin} className="bg-blue-600 text-white px-6 py-3 rounded-xl shadow-lg font-bold flex items-center gap-2 mx-auto hover:bg-blue-700 transition-all">
+                                        <Icon name="user" /> สร้างผู้จัดการ (เพิร์ธ)
+                                    </button>
+                                </div>
+                            )}
 
-                        {/* Admin Tools Button */}
-                        <div className="flex gap-4 mt-4">
-                            <button onClick={() => setModals({...modals, adminAuth: true})} className="text-xs text-slate-400 hover:text-blue-600 flex items-center gap-1 bg-white px-3 py-1 rounded-full border border-slate-200">
-                                <Icon name="settings" size={12}/> จัดการผู้ใช้ (Admin)
-                            </button>
-                            <button onClick={restoreAdmin} className="text-xs text-slate-400 hover:text-blue-600 flex items-center gap-1 bg-white px-3 py-1 rounded-full border border-slate-200">
-                                <Icon name="refresh" size={12}/> กู้คืนระบบ
-                            </button>
+                            {/* Admin Tools */}
+                            <div className="flex justify-center gap-3 mt-6">
+                                <button onClick={() => setModals({...modals, adminAuth: true})} className="text-xs text-slate-500 hover:text-blue-700 flex items-center gap-1.5 bg-white/70 px-4 py-2 rounded-full shadow-sm border border-white/50 backdrop-blur-sm transition-all hover:bg-white">
+                                    <Icon name="settings" size={14}/> จัดการผู้ใช้ (Admin)
+                                </button>
+                                <button onClick={restoreAdmin} className="text-xs text-slate-500 hover:text-blue-700 flex items-center gap-1.5 bg-white/70 px-4 py-2 rounded-full shadow-sm border border-white/50 backdrop-blur-sm transition-all hover:bg-white">
+                                    <Icon name="refresh" size={14}/> กู้คืนระบบ
+                                </button>
+                            </div>
                         </div>
 
                         {/* PIN Modal */}
                         {selectedProfile && (
-                            <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-                                <div className="bg-white p-6 rounded-2xl w-full max-w-xs text-center shadow-xl">
-                                    <h3 className="font-bold text-lg mb-4">สวัสดีคุณ {selectedProfile.name}</h3>
-                                    <input type="password" className="w-full text-center text-3xl border-b-2 py-2 mb-6 outline-none tracking-widest" 
-                                        autoFocus placeholder="PIN" value={inputs.pin || ''} onChange={e=>setInputs({...inputs, pin: e.target.value})} />
-                                    <div className="flex gap-2">
-                                        <button onClick={()=>setSelectedProfile(null)} className="flex-1 py-2 bg-slate-100 rounded">ยกเลิก</button>
-                                        <button onClick={login} className="flex-1 py-2 bg-blue-600 text-white rounded font-bold">เข้าสู่ระบบ</button>
+                            <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-in">
+                                <div className="bg-white/95 backdrop-blur-xl p-8 rounded-3xl w-full max-w-xs text-center shadow-2xl border border-white/50">
+                                    <div className="w-16 h-16 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center mx-auto mb-4 font-bold text-2xl shadow-inner">
+                                        {selectedProfile.name[0]}
+                                    </div>
+                                    <h3 className="font-bold text-xl mb-1 text-slate-800">ยินดีต้อนรับ</h3>
+                                    <p className="text-slate-500 mb-8 font-medium">คุณ {selectedProfile.name}</p>
+                                    <input type="password" className="w-full text-center text-4xl tracking-[0.5em] border-b-2 border-slate-200 focus:border-blue-500 outline-none py-2 mb-8 bg-transparent font-mono text-slate-800 transition-all" 
+                                        autoFocus placeholder="••••" value={inputs.pin || ''} onChange={e=>setInputs({...inputs, pin: e.target.value})} />
+                                    <div className="flex gap-3">
+                                        <button onClick={()=>setSelectedProfile(null)} className="flex-1 py-3 bg-slate-100 text-slate-600 rounded-xl font-bold hover:bg-slate-200 transition-colors">ยกเลิก</button>
+                                        <button onClick={login} className="flex-1 py-3 bg-blue-600 text-white rounded-xl font-bold shadow-lg shadow-blue-500/30 hover:bg-blue-700 transition-transform active:scale-95">เข้าสู่ระบบ</button>
                                     </div>
                                 </div>
                             </div>
@@ -345,16 +399,16 @@ const firebaseConfig =
 
                         {/* Admin Auth Modal */}
                         {modals.adminAuth && (
-                            <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-                                <div className="bg-white p-6 rounded-2xl w-full max-w-xs text-center shadow-xl">
-                                    <div className="text-blue-600 mb-2 flex justify-center"><Icon name="lock" size={32}/></div>
-                                    <h3 className="font-bold text-lg mb-4">โหมดผู้ดูแล</h3>
-                                    <p className="text-xs text-slate-500 mb-4">ใส่รหัสผู้จัดการเพื่อจัดการรายชื่อ</p>
-                                    <input type="password" className="w-full text-center text-3xl border-b-2 py-2 mb-6 outline-none tracking-widest" 
-                                        autoFocus placeholder="PIN" value={inputs.adminPin || ''} onChange={e=>setInputs({...inputs, adminPin: e.target.value})} />
-                                    <div className="flex gap-2">
-                                        <button onClick={()=>setModals({...modals, adminAuth: false})} className="flex-1 py-2 bg-slate-100 rounded">ยกเลิก</button>
-                                        <button onClick={verifyAdmin} className="flex-1 py-2 bg-slate-800 text-white rounded font-bold">ยืนยัน</button>
+                            <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-in">
+                                <div className="bg-white/95 backdrop-blur-xl p-8 rounded-3xl w-full max-w-xs text-center shadow-2xl border border-white/50">
+                                    <div className="text-blue-600 mb-4 flex justify-center"><Icon name="lock" size={40}/></div>
+                                    <h3 className="font-bold text-xl mb-2 text-slate-800">โหมดผู้ดูแล</h3>
+                                    <p className="text-xs text-slate-500 mb-6">ใส่รหัสผู้จัดการเพื่อจัดการรายชื่อ</p>
+                                    <input type="password" className="w-full text-center text-4xl tracking-[0.5em] border-b-2 border-slate-200 focus:border-blue-500 outline-none py-2 mb-8 bg-transparent font-mono text-slate-800" 
+                                        autoFocus placeholder="••••" value={inputs.adminPin || ''} onChange={e=>setInputs({...inputs, adminPin: e.target.value})} />
+                                    <div className="flex gap-3">
+                                        <button onClick={()=>setModals({...modals, adminAuth: false})} className="flex-1 py-3 bg-slate-100 rounded-xl font-bold hover:bg-slate-200">ยกเลิก</button>
+                                        <button onClick={verifyAdmin} className="flex-1 py-3 bg-slate-800 text-white rounded-xl font-bold hover:bg-slate-900 shadow-lg">ยืนยัน</button>
                                     </div>
                                 </div>
                             </div>
@@ -362,18 +416,22 @@ const firebaseConfig =
 
                         {/* Register Modal */}
                         {modals.register && (
-                            <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-                                <div className="bg-white p-6 rounded-2xl w-full max-w-sm shadow-xl">
-                                    <h3 className="font-bold text-lg mb-4">สมัครสมาชิกใหม่</h3>
-                                    <input className="w-full border p-3 rounded-lg mb-3" placeholder="ชื่อเล่น" value={inputs.newName || ''} onChange={e=>setInputs({...inputs, newName: e.target.value})} />
-                                    <div className="flex gap-2 mb-3">
-                                        <button onClick={()=>setInputs({...inputs, newRole: 'staff'})} className={`flex-1 py-2 border rounded ${inputs.newRole!=='manager'?'bg-blue-50 border-blue-500 text-blue-700':''}`}>พนักงาน</button>
-                                        <button onClick={()=>setInputs({...inputs, newRole: 'manager'})} className={`flex-1 py-2 border rounded ${inputs.newRole==='manager'?'bg-blue-50 border-blue-500 text-blue-700':''}`}>ผู้จัดการ</button>
-                                    </div>
-                                    <input className="w-full border p-3 rounded-lg mb-4 text-center tracking-widest" placeholder="ตั้งรหัส PIN 4 หลัก" maxLength="4" value={inputs.newPin || ''} onChange={e=>setInputs({...inputs, newPin: e.target.value})} />
-                                    <div className="flex gap-2">
-                                        <button onClick={()=>setModals({...modals, register: false})} className="flex-1 py-2 bg-slate-100 rounded">ยกเลิก</button>
-                                        <button onClick={register} className="flex-1 py-2 bg-blue-600 text-white rounded font-bold">ยืนยัน</button>
+                            <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-in">
+                                <div className="bg-white/95 backdrop-blur-xl p-6 rounded-3xl w-full max-w-sm shadow-2xl border border-white/50">
+                                    <h3 className="font-bold text-xl mb-6 text-slate-800 flex items-center gap-2">
+                                        <div className="bg-blue-100 p-2 rounded-lg text-blue-600"><Icon name="userPlus" size={24}/></div> สมัครสมาชิกใหม่
+                                    </h3>
+                                    <div className="space-y-4">
+                                        <input className="w-full p-4 border border-slate-200 rounded-xl bg-slate-50/50 focus:bg-white focus:ring-2 focus:ring-blue-500 outline-none transition-all" placeholder="ชื่อเรียก (Nickname)" value={inputs.newName || ''} onChange={e=>setInputs({...inputs, newName: e.target.value})} />
+                                        <div className="flex gap-2 p-1 bg-slate-100 rounded-xl">
+                                            <button onClick={()=>setInputs({...inputs, newRole: 'staff'})} className={`flex-1 py-2.5 rounded-lg text-sm font-bold transition-all ${inputs.newRole!=='manager'?'bg-white text-blue-700 shadow-sm':'text-slate-500 hover:text-slate-700'}`}>พนักงาน</button>
+                                            <button onClick={()=>setInputs({...inputs, newRole: 'manager'})} className={`flex-1 py-2.5 rounded-lg text-sm font-bold transition-all ${inputs.newRole==='manager'?'bg-white text-blue-700 shadow-sm':'text-slate-500 hover:text-slate-700'}`}>ผู้จัดการ</button>
+                                        </div>
+                                        <input className="w-full p-4 border border-slate-200 rounded-xl bg-slate-50/50 focus:bg-white focus:ring-2 focus:ring-blue-500 outline-none text-center tracking-widest font-mono text-lg transition-all" placeholder="ตั้งรหัส PIN 4 หลัก" maxLength="4" value={inputs.newPin || ''} onChange={e=>setInputs({...inputs, newPin: e.target.value})} />
+                                        <div className="flex gap-3 pt-2">
+                                            <button onClick={()=>setModals({...modals, register: false})} className="flex-1 py-3 bg-slate-100 rounded-xl font-bold text-slate-600 hover:bg-slate-200">ยกเลิก</button>
+                                            <button onClick={register} className="flex-1 py-3 bg-blue-600 text-white rounded-xl font-bold shadow-lg shadow-blue-500/30 hover:bg-blue-700">ยืนยัน</button>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
@@ -381,31 +439,30 @@ const firebaseConfig =
 
                         {/* User Management Modal (Login Screen Version) */}
                         {modals.manage && (
-                            <div className="fixed inset-0 bg-black/60 flex items-center justify-center p-4 z-50">
-                                <div className="bg-white p-6 rounded-2xl w-full max-w-sm max-h-[80vh] overflow-y-auto shadow-2xl">
-                                    <div className="flex justify-between items-center mb-4 sticky top-0 bg-white pb-2 border-b">
-                                        <h3 className="font-bold text-lg flex items-center gap-2"><Icon name="settings"/> จัดการรายชื่อ</h3>
-                                        <button onClick={() => setModals({...modals, manage: false})}><Icon name="x"/></button>
+                            <div className="fixed inset-0 bg-black/60 flex items-center justify-center p-4 z-50 animate-in">
+                                <div className="bg-white p-6 rounded-3xl w-full max-w-sm max-h-[80vh] overflow-y-auto shadow-2xl">
+                                    <div className="flex justify-between items-center mb-6 sticky top-0 bg-white pb-4 border-b border-slate-100">
+                                        <h3 className="font-bold text-xl text-slate-800 flex items-center gap-2"><div className="bg-slate-100 p-2 rounded-lg"><Icon name="settings" size={20}/></div> จัดการรายชื่อ</h3>
+                                        <button onClick={() => setModals({...modals, manage: false})} className="p-2 hover:bg-slate-100 rounded-full"><Icon name="x"/></button>
                                     </div>
                                     <div className="space-y-3">
                                         {profiles.map(p => (
-                                            <div key={p.id} className="flex items-center justify-between p-3 border rounded-xl bg-slate-50">
+                                            <div key={p.id} className="flex items-center justify-between p-3 border border-slate-200 rounded-2xl bg-slate-50/50">
                                                 <div className="flex items-center gap-3">
-                                                    <div className="w-10 h-10 bg-white rounded-full flex items-center justify-center font-bold text-slate-500 shadow-sm border">{p.name[0]}</div>
+                                                    <div className="w-10 h-10 bg-white rounded-full flex items-center justify-center font-bold text-slate-500 shadow-sm border border-slate-100">{p.name[0]}</div>
                                                     <div>
                                                         <div className="font-bold text-slate-800">{p.name}</div>
-                                                        <div className="text-xs text-slate-500 uppercase">{p.role} • {p.status}</div>
+                                                        <div className="text-xs text-slate-500 uppercase font-semibold bg-white px-2 py-0.5 rounded border border-slate-200 inline-block mt-0.5">{p.role} • {p.status}</div>
                                                     </div>
                                                 </div>
-                                                {/* Allow deletion if user is manager, or if in Admin Mode (userData is null) */}
-                                                <div className="flex gap-1">
+                                                <div className="flex gap-2">
                                                     {p.status === 'pending' && (
-                                                        <button onClick={() => updateUserStatus(p.id, 'active')} className="p-2 text-emerald-600 hover:bg-emerald-100 rounded-lg transition-colors">
+                                                        <button onClick={() => updateUserStatus(p.id, 'active')} className="p-2 text-white bg-emerald-500 hover:bg-emerald-600 rounded-xl shadow-sm transition-colors">
                                                             <Icon name="check" size={18} />
                                                         </button>
                                                     )}
                                                     {(!userData || userData.id !== p.id) && (
-                                                        <button onClick={() => deleteUser(p.id)} className="p-2 text-rose-500 hover:bg-rose-100 rounded-lg transition-colors">
+                                                        <button onClick={() => deleteUser(p.id)} className="p-2 text-rose-500 bg-white border border-rose-200 hover:bg-rose-50 rounded-xl transition-colors">
                                                             <Icon name="trash" size={18} />
                                                         </button>
                                                     )}
@@ -422,73 +479,109 @@ const firebaseConfig =
 
             // 2. Main App View
             return (
-                <div className="min-h-screen bg-slate-50 pb-20">
-                    <header className="bg-white px-4 py-3 sticky top-0 shadow-sm flex justify-between items-center z-10">
+                <div className="min-h-screen pb-20">
+                    <header className="bg-white/80 backdrop-blur-md px-4 py-3 sticky top-0 shadow-sm flex justify-between items-center z-10 border-b border-white/50">
                         <div className="flex items-center gap-3">
-                            <div className="bg-gradient-to-br from-blue-600 to-indigo-700 w-10 h-10 rounded-xl flex items-center justify-center text-white font-bold">V</div>
+                            <div className="bg-gradient-to-br from-blue-600 to-indigo-700 w-10 h-10 rounded-xl flex items-center justify-center text-white font-bold shadow-md">V</div>
                             <div>
                                 <h1 className="font-bold text-slate-800">Volvo Finance</h1>
-                                <div className="text-xs text-slate-500">{userData.name} ({userData.role})</div>
+                                <div className="text-xs text-slate-500 font-medium">{userData.name} ({userData.role})</div>
                             </div>
                         </div>
-                        <button onClick={()=>{setUserData(null); setView('dashboard');}} className="p-2 bg-slate-100 rounded-full text-slate-500"><Icon name="logout"/></button>
+                        <button onClick={()=>{setUserData(null); setView('dashboard');}} className="p-2 bg-slate-100 rounded-full text-slate-500 hover:bg-slate-200 transition-colors"><Icon name="logout"/></button>
                     </header>
 
-                    <main className="p-4 space-y-4 max-w-md mx-auto">
-                        <div className="bg-slate-800 text-white p-6 rounded-3xl shadow-xl relative overflow-hidden">
+                    <main className="p-4 space-y-6 max-w-md mx-auto">
+                        {/* Balance Card */}
+                        <div className="bg-gradient-to-br from-slate-800 to-slate-900 text-white p-6 rounded-[2rem] shadow-2xl relative overflow-hidden group">
                             <div className="relative z-10">
-                                <div className="text-slate-400 text-xs font-bold mb-1">BALANCE</div>
-                                <div className="text-4xl font-bold">{formatMoney(balance)}</div>
+                                <div className="flex justify-between items-start mb-4">
+                                    <div className="flex items-center gap-2 text-slate-400 text-xs font-bold tracking-wider bg-white/10 px-3 py-1 rounded-full backdrop-blur-md"><Icon name="creditCard" size={12}/> SERVICE FUND</div>
+                                    <Icon name="building" className="text-slate-600" size={24}/>
+                                </div>
+                                <div className="text-5xl font-bold tracking-tight">{formatMoney(balance).split('.')[0]}<span className="text-2xl text-slate-400 font-normal">.{formatMoney(balance).split('.')[1]}</span></div>
+                                <div className="text-slate-400 text-xs mt-2 font-medium">ยอดเงินคงเหลือปัจจุบัน</div>
                             </div>
-                            <div className="absolute right-0 top-0 w-32 h-32 bg-white/10 rounded-full blur-2xl -mr-10 -mt-10"></div>
+                            <div className="absolute right-0 top-0 w-40 h-40 bg-blue-500/20 rounded-full blur-3xl -mr-10 -mt-10 transition-transform group-hover:scale-110"></div>
+                            <div className="absolute left-0 bottom-0 w-32 h-32 bg-indigo-500/20 rounded-full blur-3xl -ml-5 -mb-5 transition-transform group-hover:scale-110"></div>
                         </div>
 
-                        <div className="grid grid-cols-2 gap-3">
-                            <button onClick={()=>setModals({...modals, request: true})} className="bg-white p-4 rounded-2xl shadow-sm border flex items-center gap-3 hover:bg-blue-50 transition">
-                                <div className="bg-blue-100 text-blue-600 p-2 rounded-full"><Icon name="minus"/></div>
-                                <div className="text-left"><div className="font-bold">เบิกเงิน</div><div className="text-xs text-slate-400">Request</div></div>
+                        {/* Menu Grid */}
+                        <div className="grid grid-cols-2 gap-4">
+                            <button onClick={()=>setModals({...modals, request: true})} className="glass-card p-5 rounded-2xl flex items-center gap-4 hover:shadow-md hover:scale-[1.02] transition-all group border-0">
+                                <div className="bg-blue-50 text-blue-600 w-12 h-12 rounded-2xl flex items-center justify-center group-hover:bg-blue-600 group-hover:text-white transition-colors shadow-sm"><Icon name="minusCircle" size={24}/></div>
+                                <div className="text-left"><div className="font-bold text-slate-800">เบิกเงิน</div><div className="text-xs text-slate-500 font-medium">Request</div></div>
                             </button>
                             {userData.role === 'manager' && (
-                                <button onClick={()=>setModals({...modals, deposit: true})} className="bg-white p-4 rounded-2xl shadow-sm border flex items-center gap-3 hover:bg-emerald-50 transition">
-                                    <div className="bg-emerald-100 text-emerald-600 p-2 rounded-full"><Icon name="plus"/></div>
-                                    <div className="text-left"><div className="font-bold">เติมเงิน</div><div className="text-xs text-slate-400">Deposit</div></div>
+                                <button onClick={()=>setModals({...modals, deposit: true})} className="glass-card p-5 rounded-2xl flex items-center gap-4 hover:shadow-md hover:scale-[1.02] transition-all group border-0">
+                                    <div className="bg-emerald-50 text-emerald-600 w-12 h-12 rounded-2xl flex items-center justify-center group-hover:bg-emerald-600 group-hover:text-white transition-colors shadow-sm"><Icon name="plusCircle" size={24}/></div>
+                                    <div className="text-left"><div className="font-bold text-slate-800">เติมเงิน</div><div className="text-xs text-slate-500 font-medium">Deposit</div></div>
                                 </button>
                             )}
                         </div>
 
                         {userData.role === 'manager' && (
-                            <div className="grid grid-cols-2 gap-3">
-                                <button onClick={()=>setView('approvals')} className="bg-amber-50 border border-amber-100 p-3 rounded-xl flex items-center justify-between text-amber-800">
+                            <div className="grid grid-cols-2 gap-4">
+                                <button onClick={()=>setView('approvals')} className="bg-amber-50/80 backdrop-blur-sm border border-amber-100 p-4 rounded-2xl flex items-center justify-between text-amber-800 shadow-sm hover:bg-amber-100 transition-colors">
                                     <span className="text-sm font-bold">รออนุมัติ ({pendingRequests.length})</span>
-                                    {pendingRequests.length > 0 && <span className="bg-amber-500 text-white text-xs px-2 py-0.5 rounded-full">!</span>}
+                                    {pendingRequests.length > 0 && <span className="bg-amber-500 text-white text-xs px-2 py-0.5 rounded-full font-bold">!</span>}
                                 </button>
-                                <button onClick={()=>setModals({...modals, manage: true})} className="bg-slate-100 border border-slate-200 p-3 rounded-xl flex items-center justify-between text-slate-700">
+                                <button onClick={()=>setModals({...modals, manage: true})} className="glass-card border border-white/50 p-4 rounded-2xl flex items-center justify-between text-slate-700 hover:bg-white transition-colors">
                                     <span className="text-sm font-bold">พนักงาน ({pendingUsers.length > 0 ? pendingUsers.length + ' ใหม่' : profiles.length})</span>
-                                    {pendingUsers.length > 0 && <span className="bg-blue-500 text-white text-xs px-2 py-0.5 rounded-full">New</span>}
+                                    {pendingUsers.length > 0 && <span className="bg-blue-500 text-white text-xs px-2 py-0.5 rounded-full font-bold">New</span>}
                                 </button>
                             </div>
                         )}
 
-                        <div className="bg-white rounded-2xl border shadow-sm overflow-hidden">
-                            <div className="bg-slate-50 p-3 border-b text-sm font-bold text-slate-500 flex justify-between">
-                                <span>รายการล่าสุด</span>
-                                <button onClick={()=>setView('dashboard')} className="text-blue-600">รีเฟรช</button>
+                        {/* Income Summary Breakdown */}
+                        {view === 'dashboard' && incomeBreakdown.some(i => i.total > 0) && (
+                            <div className="glass-card rounded-[2rem] p-5 shadow-sm border border-white/50">
+                                <h3 className="font-bold text-slate-700 flex items-center gap-2 mb-4"><Icon name="pieChart" size={18} className="text-indigo-500"/> สรุปแหล่งที่มาของเงิน</h3>
+                                <div className="space-y-3">
+                                    {incomeBreakdown.filter(i => i.total > 0).map(cat => (
+                                        <div key={cat.id} className="flex items-center justify-between">
+                                            <div className="flex items-center gap-3">
+                                                <div className={`w-10 h-10 rounded-xl flex items-center justify-center text-lg ${cat.color.replace('text-', 'bg-').replace('100', '50')}`}>
+                                                    {cat.icon}
+                                                </div>
+                                                <div>
+                                                    <div className="text-sm font-bold text-slate-700">{cat.label}</div>
+                                                    <div className="w-24 h-1.5 bg-slate-200 rounded-full mt-1 overflow-hidden">
+                                                        <div className="h-full bg-indigo-500 rounded-full" style={{width: `${cat.percent}%`}}></div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div className="text-right">
+                                                <div className="font-bold text-slate-800 text-sm">{formatMoney(cat.total)}</div>
+                                                <div className="text-[10px] text-slate-400 font-bold">{cat.percent.toFixed(0)}%</div>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
                             </div>
-                            <div className="divide-y max-h-80 overflow-y-auto">
+                        )}
+
+                        {/* Recent Transactions */}
+                        <div className="glass-card rounded-[2rem] border border-white/50 shadow-sm overflow-hidden">
+                            <div className="bg-white/50 p-4 border-b border-slate-100 flex justify-between items-center backdrop-blur-sm">
+                                <h3 className="font-bold text-slate-700 flex items-center gap-2"><Icon name="history" size={18} className="text-blue-500"/> {view === 'dashboard' ? 'รายการล่าสุด' : view === 'approvals' ? 'รายการรออนุมัติ' : 'ประวัติของฉัน'}</h3>
+                                {view !== 'dashboard' && <button onClick={()=>setView('dashboard')} className="text-xs text-blue-600 font-bold bg-blue-50 px-2 py-1 rounded-lg">กลับหน้าหลัก</button>}
+                            </div>
+                            <div className="divide-y divide-slate-100/50 max-h-96 overflow-y-auto">
                                 {view === 'dashboard' ? (
                                     transactions.length === 0 ? <div className="p-8 text-center text-slate-400">ไม่มีรายการ</div> :
                                     transactions.map(t => (
-                                        <div key={t.id} className="p-3 flex justify-between items-center">
-                                            <div className="flex items-center gap-3">
-                                                <div className={`p-2 rounded-lg ${t.type==='income'?'bg-emerald-100 text-emerald-600':'bg-slate-100 text-slate-500'}`}>
-                                                    <Icon name={t.type==='income'?'plus':'minus'} size={16}/>
+                                        <div key={t.id} className="p-4 hover:bg-white/40 transition-colors flex justify-between items-center">
+                                            <div className="flex items-center gap-4">
+                                                <div className={`w-12 h-12 rounded-2xl flex items-center justify-center shadow-sm ${t.type==='income'?'bg-emerald-50 text-emerald-600':'bg-slate-50 text-slate-500'}`}>
+                                                    <Icon name={t.type==='income'?'trendingUp':'trendingDown'} size={20}/>
                                                 </div>
                                                 <div>
                                                     <div className="font-bold text-sm text-slate-800">{t.description}</div>
-                                                    <div className="text-xs text-slate-400">{t.performer} • {new Date(t.createdAt?.seconds*1000).toLocaleDateString('th-TH')}</div>
+                                                    <div className="text-xs text-slate-400 font-medium mt-0.5">{t.performer} • {new Date(t.createdAt?.seconds*1000).toLocaleDateString('th-TH')}</div>
                                                 </div>
                                             </div>
-                                            <div className={`font-bold ${t.type==='income'?'text-emerald-600':'text-slate-800'}`}>
+                                            <div className={`font-bold text-base ${t.type==='income'?'text-emerald-600':'text-slate-800'}`}>
                                                 {t.type==='income'?'+':'-'}{formatMoney(t.amount)}
                                             </div>
                                         </div>
@@ -496,14 +589,17 @@ const firebaseConfig =
                                 ) : view === 'approvals' ? (
                                     pendingRequests.length === 0 ? <div className="p-8 text-center text-slate-400">ไม่มีรายการรออนุมัติ</div> :
                                     pendingRequests.map(r => (
-                                        <div key={r.id} className="p-4 bg-amber-50 border-b border-amber-100 last:border-0">
-                                            <div className="flex justify-between mb-2">
-                                                <div><div className="font-bold text-lg">{r.description}</div><div className="text-xs text-slate-500">โดย {r.requester}</div></div>
-                                                <div className="font-bold text-lg text-slate-800">{formatMoney(r.amount)}</div>
+                                        <div key={r.id} className="p-5 bg-amber-50/50 border-b border-amber-100/50 last:border-0">
+                                            <div className="flex justify-between mb-3">
+                                                <div>
+                                                    <div className="font-bold text-lg text-slate-800">{r.description}</div>
+                                                    <div className="text-xs text-slate-500 font-medium bg-white px-2 py-1 rounded-lg w-fit mt-1 shadow-sm">โดย {r.requester}</div>
+                                                </div>
+                                                <div className="font-bold text-xl text-slate-800">{formatMoney(r.amount)}</div>
                                             </div>
-                                            <div className="flex gap-2">
-                                                <button onClick={()=>processRequest(r, 'approved')} className="bg-emerald-500 text-white px-4 py-1.5 rounded-lg text-sm flex-1">อนุมัติ</button>
-                                                <button onClick={()=>processRequest(r, 'rejected')} className="bg-white border border-slate-300 text-slate-600 px-4 py-1.5 rounded-lg text-sm flex-1">ปฏิเสธ</button>
+                                            <div className="flex gap-3">
+                                                <button onClick={()=>processRequest(r, 'approved')} className="bg-emerald-500 text-white px-4 py-2.5 rounded-xl text-sm font-bold flex-1 shadow-md shadow-emerald-500/20 hover:bg-emerald-600 transition-all">อนุมัติ</button>
+                                                <button onClick={()=>processRequest(r, 'rejected')} className="bg-white border border-slate-200 text-slate-600 px-4 py-2.5 rounded-xl text-sm font-bold flex-1 hover:bg-slate-50 transition-all">ปฏิเสธ</button>
                                             </div>
                                         </div>
                                     ))
@@ -513,53 +609,56 @@ const firebaseConfig =
                     </main>
 
                     {modals.request && (
-                        <div className="fixed inset-0 bg-black/60 flex items-center justify-center p-4 z-50">
-                            <div className="bg-white p-6 rounded-2xl w-full max-w-sm">
-                                <h3 className="font-bold text-lg mb-4">ขอเบิกเงิน</h3>
-                                <input className="w-full border p-3 rounded-lg mb-3" placeholder="รายการ" autoFocus value={inputs.desc || ''} onChange={e=>setInputs({...inputs, desc: e.target.value})} />
-                                <input className="w-full border p-3 rounded-lg mb-4" type="number" placeholder="จำนวนเงิน" value={inputs.amount || ''} onChange={e=>setInputs({...inputs, amount: e.target.value})} />
-                                <div className="flex gap-2">
-                                    <button onClick={()=>setModals({...modals, request: false})} className="flex-1 py-3 bg-slate-100 rounded-lg">ยกเลิก</button>
-                                    <button onClick={submitRequest} className="flex-1 py-3 bg-blue-600 text-white rounded-lg font-bold">ส่งคำขอ</button>
+                        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 z-50 animate-in">
+                            <div className="bg-white p-6 rounded-3xl w-full max-w-sm shadow-2xl">
+                                <h3 className="font-bold text-xl mb-6 text-slate-800 flex items-center gap-2"><div className="bg-blue-100 p-2 rounded-xl text-blue-600"><Icon name="minusCircle" size={24}/></div> ขอเบิกเงิน</h3>
+                                <input className="w-full border p-4 rounded-2xl mb-3 bg-slate-50 focus:bg-white focus:ring-2 focus:ring-blue-500 outline-none transition-all" placeholder="รายการค่าใช้จ่าย" autoFocus value={inputs.desc || ''} onChange={e=>setInputs({...inputs, desc: e.target.value})} />
+                                <input className="w-full border p-4 rounded-2xl mb-6 bg-slate-50 focus:bg-white focus:ring-2 focus:ring-blue-500 outline-none transition-all text-lg font-medium" type="number" placeholder="จำนวนเงิน" value={inputs.amount || ''} onChange={e=>setInputs({...inputs, amount: e.target.value})} />
+                                <div className="flex gap-3">
+                                    <button onClick={()=>setModals({...modals, request: false})} className="flex-1 py-3 bg-slate-100 rounded-xl text-slate-600 font-bold hover:bg-slate-200">ยกเลิก</button>
+                                    <button onClick={submitRequest} className="flex-1 py-3 bg-blue-600 text-white rounded-xl font-bold shadow-lg shadow-blue-500/30 hover:bg-blue-700">ส่งคำขอ</button>
                                 </div>
                             </div>
                         </div>
                     )}
 
                     {modals.deposit && (
-                        <div className="fixed inset-0 bg-black/60 flex items-center justify-center p-4 z-50">
-                            <div className="bg-white p-6 rounded-2xl w-full max-w-sm">
-                                <h3 className="font-bold text-lg mb-4">เติมเงิน</h3>
-                                <input className="w-full border p-3 rounded-lg mb-3" placeholder="รายละเอียด" autoFocus value={inputs.desc || ''} onChange={e=>setInputs({...inputs, desc: e.target.value})} />
-                                <input className="w-full border p-3 rounded-lg mb-4" type="number" placeholder="จำนวนเงิน" value={inputs.amount || ''} onChange={e=>setInputs({...inputs, amount: e.target.value})} />
-                                <div className="flex gap-2">
-                                    <button onClick={()=>setModals({...modals, deposit: false})} className="flex-1 py-3 bg-slate-100 rounded-lg">ยกเลิก</button>
-                                    <button onClick={submitDeposit} className="flex-1 py-3 bg-emerald-600 text-white rounded-lg font-bold">ยืนยัน</button>
+                        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 z-50 animate-in">
+                            <div className="bg-white p-6 rounded-3xl w-full max-w-sm shadow-2xl">
+                                <h3 className="font-bold text-xl mb-6 text-slate-800 flex items-center gap-2"><div className="bg-emerald-100 p-2 rounded-xl text-emerald-600"><Icon name="plusCircle" size={24}/></div> เติมเงิน</h3>
+                                <select className="w-full border p-4 rounded-2xl mb-3 bg-slate-50 focus:bg-white focus:ring-2 focus:ring-emerald-500 outline-none transition-all appearance-none" value={depositCategory} onChange={e=>setDepositCategory(e.target.value)}>
+                                    {INCOME_CATEGORIES.map(c => <option key={c.id} value={c.id}>{c.icon} {c.label}</option>)}
+                                </select>
+                                <input className="w-full border p-4 rounded-2xl mb-3 bg-slate-50 focus:bg-white focus:ring-2 focus:ring-emerald-500 outline-none transition-all" placeholder="รายละเอียดเพิ่มเติม" autoFocus value={inputs.desc || ''} onChange={e=>setInputs({...inputs, desc: e.target.value})} />
+                                <input className="w-full border p-4 rounded-2xl mb-6 bg-slate-50 focus:bg-white focus:ring-2 focus:ring-emerald-500 outline-none transition-all text-lg font-medium" type="number" placeholder="จำนวนเงิน" value={inputs.amount || ''} onChange={e=>setInputs({...inputs, amount: e.target.value})} />
+                                <div className="flex gap-3">
+                                    <button onClick={()=>setModals({...modals, deposit: false})} className="flex-1 py-3 bg-slate-100 rounded-xl text-slate-600 font-bold hover:bg-slate-200">ยกเลิก</button>
+                                    <button onClick={submitDeposit} className="flex-1 py-3 bg-emerald-600 text-white rounded-xl font-bold shadow-lg shadow-emerald-500/30 hover:bg-emerald-700">ยืนยัน</button>
                                 </div>
                             </div>
                         </div>
                     )}
 
                     {modals.manage && (
-                        <div className="fixed inset-0 bg-black/60 flex items-center justify-center p-4 z-50">
-                            <div className="bg-white p-6 rounded-2xl w-full max-w-sm max-h-[80vh] overflow-y-auto">
-                                <div className="flex justify-between items-center mb-4">
-                                    <h3 className="font-bold text-lg">จัดการพนักงาน</h3>
-                                    <button onClick={()=>setModals({...modals, manage: false})}><Icon name="x"/></button>
+                        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 z-50 animate-in">
+                            <div className="bg-white p-6 rounded-3xl w-full max-w-sm max-h-[80vh] overflow-y-auto shadow-2xl">
+                                <div className="flex justify-between items-center mb-6 sticky top-0 bg-white pb-4 border-b border-slate-100">
+                                    <h3 className="font-bold text-xl text-slate-800 flex items-center gap-2"><div className="bg-slate-100 p-2 rounded-xl"><Icon name="settings"/></div> จัดการพนักงาน</h3>
+                                    <button onClick={()=>setModals({...modals, manage: false})} className="p-2 hover:bg-slate-100 rounded-full"><Icon name="x"/></button>
                                 </div>
                                 <div className="space-y-3">
                                     {profiles.map(p => (
-                                        <div key={p.id} className="flex items-center justify-between p-3 border rounded-xl bg-slate-50">
+                                        <div key={p.id} className="flex items-center justify-between p-4 border border-slate-200 rounded-2xl bg-slate-50/50">
                                             <div className="flex items-center gap-3">
-                                                <div className="w-10 h-10 bg-white rounded-full flex items-center justify-center font-bold border shadow-sm">{p.name[0]}</div>
+                                                <div className="w-10 h-10 bg-white rounded-full flex items-center justify-center font-bold text-slate-500 shadow-sm border border-slate-100">{p.name[0]}</div>
                                                 <div>
-                                                    <div className="font-bold text-slate-800">{p.name} {userData && userData.id === p.id && <span className="text-xs text-blue-600">(ฉัน)</span>}</div>
-                                                    <div className="text-xs text-slate-500 uppercase">{p.role} • {p.status}</div>
+                                                    <div className="font-bold text-slate-800">{p.name} {userData.id === p.id && <span className="text-xs text-blue-600">(ฉัน)</span>}</div>
+                                                    <div className="text-xs text-slate-500 uppercase font-semibold bg-white px-2 py-0.5 rounded border border-slate-200 inline-block mt-0.5">{p.role} • {p.status}</div>
                                                 </div>
                                             </div>
-                                            <div className="flex gap-1">
-                                                {p.status === 'pending' && <button onClick={()=>updateUserStatus(p.id, 'active')} className="p-2 text-emerald-600 bg-emerald-100 rounded-lg"><Icon name="check"/></button>}
-                                                {userData.id !== p.id && <button onClick={()=>deleteUser(p.id)} className="p-2 text-rose-600 hover:bg-rose-100 rounded-lg"><Icon name="trash"/></button>}
+                                            <div className="flex gap-2">
+                                                {p.status === 'pending' && <button onClick={()=>updateUserStatus(p.id, 'active')} className="p-2 text-white bg-emerald-500 rounded-xl hover:bg-emerald-600 shadow-sm transition-colors"><Icon name="check"/></button>}
+                                                {userData.id !== p.id && <button onClick={()=>deleteUser(p.id)} className="p-2 text-rose-500 bg-white border border-rose-200 hover:bg-rose-50 rounded-xl transition-colors"><Icon name="trash"/></button>}
                                             </div>
                                         </div>
                                     ))}
