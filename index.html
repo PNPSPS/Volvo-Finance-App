@@ -47,7 +47,7 @@
             Wallet, PlusCircle, MinusCircle, CheckCircle2, XCircle, 
             History, User, LogOut, AlertCircle, TrendingUp, TrendingDown, 
             Clock, Building2, Lock, UserPlus, PieChart, CreditCard, 
-            ChevronRight, Sparkles, Settings
+            ChevronRight, Sparkles, Settings, RefreshCw
         } from 'lucide-react';
         import { initializeApp } from 'firebase/app';
         import { getAuth, signInAnonymously, onAuthStateChanged, signInWithCustomToken } from 'firebase/auth';
@@ -226,11 +226,23 @@
                 const unsubUsers = onSnapshot(collection(db, 'artifacts', appId, 'public', 'data', 'users'), (snap) => {
                     const data = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
                     setProfiles(data);
-                    // Auto-seed Admin if empty
-                    if (data.length === 0) {
-                        addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'users'), {
-                            name: 'เพิร์ธ', role: 'manager', pin: '2121', status: 'active', createdAt: serverTimestamp()
-                        });
+                    
+                    // --- INTELLIGENT AUTO-SEED (แก้ไขใหม่) ---
+                    // เช็คว่ามี Manager ที่ Active อยู่ไหม ถ้าไม่มีเลย -> สร้างหรือกู้คืน "เพิร์ธ"
+                    // วิธีนี้แก้ปัญหา Deadlock กรณีมี User อื่นสมัครเข้ามาก่อน
+                    const hasActiveManager = data.some(u => u.role === 'manager' && u.status === 'active');
+                    
+                    if (!hasActiveManager) {
+                        const existingAdmin = data.find(u => u.name === 'เพิร์ธ' && u.role === 'manager');
+                        if (existingAdmin) {
+                            // มี User เพิร์ธอยู่แล้วแต่ยังไม่ Active -> บังคับ Active เลย
+                            updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'users', existingAdmin.id), { status: 'active' });
+                        } else {
+                            // ไม่มี User เพิร์ธเลย -> สร้างใหม่
+                            addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'users'), {
+                                name: 'เพิร์ธ', role: 'manager', pin: '2121', status: 'active', createdAt: serverTimestamp()
+                            });
+                        }
                     }
                 });
 
@@ -278,6 +290,21 @@
                 setNewName(''); setNewPin(''); setShowRegisterModal(false);
                 setRegisterSuccessMsg('ส่งคำขอเรียบร้อย รอการอนุมัติ');
                 setTimeout(() => setRegisterSuccessMsg(''), 5000);
+            };
+            
+            // ฟังก์ชันกู้คืนผู้ดูแลระบบ (Manual Trigger)
+            const restoreAdmin = async () => {
+                if(!confirm('ยืนยันการสร้าง/กู้คืนผู้จัดการ "เพิร์ธ (2121)"?')) return;
+                const existingAdmin = profiles.find(u => u.name === 'เพิร์ธ' && u.role === 'manager');
+                if (existingAdmin) {
+                    await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'users', existingAdmin.id), { status: 'active', pin: '2121' });
+                } else {
+                    await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'users'), {
+                        name: 'เพิร์ธ', role: 'manager', pin: '2121', status: 'active', createdAt: serverTimestamp()
+                    });
+                }
+                alert('กู้คืนสำเร็จ! กรุณาลองล็อกอินใหม่');
+                window.location.reload();
             };
 
             const submitRequest = async (e) => {
@@ -337,6 +364,12 @@
                                 <button onClick={() => setShowRegisterModal(true)} className="bg-slate-50 border-2 border-dashed border-slate-200 rounded-2xl p-4 flex flex-col items-center justify-center gap-3 text-slate-400 hover:text-slate-600 hover:border-slate-300 hover:bg-slate-100 transition-all min-h-[160px]">
                                     <div className="w-12 h-12 rounded-full bg-white flex items-center justify-center shadow-sm"><PlusCircle className="w-6 h-6" /></div>
                                     <span className="text-sm font-medium">สมัครใช้งาน</span>
+                                </button>
+                            </div>
+                            
+                            <div className="text-center mt-8">
+                                <button onClick={restoreAdmin} className="text-xs text-slate-400 hover:text-blue-500 underline flex items-center justify-center gap-1 mx-auto">
+                                    <RefreshCw size={10} /> กู้คืนผู้จัดการ (Restore Admin)
                                 </button>
                             </div>
                         </div>
