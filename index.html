@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Volvo Finance Service (Safe Mode)</title>
+    <title>Volvo Finance Service (Admin Mode)</title>
     
     <!-- 1. โหลด Styles -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -64,16 +64,16 @@
             const icons = {
                 settings: <path d="M12.22 2h-.44a2 2 0 0 1-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.47a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6z" />,
                 user: <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2 M12 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8z" />,
-                lock: <><rect x="3" y="11" width="18" height="11" rx="2" ry="2" /><path d="M7 11V7a5 5 0 0 1 10 0v4" /></>,
+                lock: <g><rect x="3" y="11" width="18" height="11" rx="2" ry="2" /><path d="M7 11V7a5 5 0 0 1 10 0v4" /></g>,
                 building: <path d="M6 22V4a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v18 M6 12H4a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h2 M18 9h2a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2h-2 M10 6h4 M10 10h4 M10 14h4 M10 18h4" />,
                 logout: <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4 M16 17l5-5-5-5 M21 12H9" />,
-                plus: <><line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" /></>,
+                plus: <g><line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" /></g>,
                 minus: <line x1="5" y1="12" x2="19" y2="12" />,
                 wallet: <path d="M21 12V7H5a2 2 0 0 1 0-4h14v4M3 5v14a2 2 0 0 0 2 2h16v-5M18 12a2 2 0 0 0 0 4h4v-4h-4z" />,
                 users: <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2 M16 3.13a4 4 0 0 1 0 7.75" />,
-                trash: <><polyline points="3 6 5 6 21 6" /><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" /></>,
-                refresh: <><polyline points="23 4 23 10 17 10" /><polyline points="1 20 1 14 7 14" /><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15" /></>,
-                x: <><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></>,
+                trash: <g><polyline points="3 6 5 6 21 6" /><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" /></g>,
+                refresh: <g><polyline points="23 4 23 10 17 10" /><polyline points="1 20 1 14 7 14" /><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15" /></g>,
+                x: <g><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></g>,
                 check: <polyline points="20 6 9 17 4 12" />
             };
             return (
@@ -91,7 +91,6 @@
             const save = () => {
                 try {
                     let clean = input.trim().replace(/^(const|var|let)\s+firebaseConfig\s*=\s*/, '').replace(/;$/, '');
-                    // ใช้ JSON.parse ถ้าเป็น JSON หรือ Function ถ้าเป็น JS Object
                     let json;
                     try { json = JSON.parse(clean); } 
                     catch { json = new Function('return ' + clean)(); }
@@ -131,12 +130,12 @@
             const [userData, setUserData] = useState(null);
             
             // UI State
-            const [view, setView] = useState('dashboard'); // dashboard, history, approvals
-            const [modals, setModals] = useState({ register: false, request: false, deposit: false, manage: false });
+            const [view, setView] = useState('dashboard'); 
+            const [modals, setModals] = useState({ register: false, request: false, deposit: false, manage: false, adminAuth: false });
             const [profiles, setProfiles] = useState([]);
             const [transactions, setTransactions] = useState([]);
             const [requests, setRequests] = useState([]);
-            const [inputs, setInputs] = useState({}); // Generic inputs
+            const [inputs, setInputs] = useState({});
             const [selectedProfile, setSelectedProfile] = useState(null);
 
             // 1. Initialize Firebase
@@ -148,7 +147,6 @@
                     const auth = firebase.auth();
                     const db = firebase.firestore();
                     
-                    // Auth Check
                     auth.onAuthStateChanged(u => {
                         if (!u) auth.signInAnonymously().catch(e => alert("Auth Error: " + e.message));
                         setUser(u);
@@ -168,18 +166,15 @@
                 const db = firebase.firestore();
                 const appId = 'volvo-finance';
 
-                // Listen Users
                 const unsubUsers = db.collection('app_data').doc(appId).collection('users').onSnapshot(snap => {
                     setProfiles(snap.docs.map(d => ({id: d.id, ...d.data()})));
                 });
 
-                // Listen Transactions
                 const unsubTx = db.collection('app_data').doc(appId).collection('transactions')
                     .orderBy('createdAt', 'desc').limit(50).onSnapshot(snap => {
                     setTransactions(snap.docs.map(d => ({id: d.id, ...d.data()})));
                 });
 
-                // Listen Requests
                 const unsubReq = db.collection('app_data').doc(appId).collection('requests')
                     .orderBy('createdAt', 'desc').limit(50).onSnapshot(snap => {
                     setRequests(snap.docs.map(d => ({id: d.id, ...d.data()})));
@@ -214,6 +209,15 @@
                     alert("รหัส PIN ไม่ถูกต้อง");
                 }
             };
+
+            const verifyAdmin = () => {
+                if (inputs.adminPin === '2121') { // Simple Manager PIN Check for Quick Access
+                    setModals({...modals, adminAuth: false, manage: true});
+                    setInputs({});
+                } else {
+                    alert("รหัสผู้จัดการไม่ถูกต้อง (Default: 2121)");
+                }
+            }
 
             const register = async () => {
                 if (!inputs.newName || !inputs.newPin) return alert("กรอกข้อมูลให้ครบ");
@@ -252,22 +256,19 @@
             };
 
             const deleteUser = async (id) => {
-                if(confirm("ลบผู้ใช้นี้?")) await db.collection('app_data').doc(appId).collection('users').doc(id).delete();
+                if(confirm("ยืนยันลบผู้ใช้นี้?")) await db.collection('app_data').doc(appId).collection('users').doc(id).delete();
             };
 
             const updateUserStatus = async (id, status) => {
                 await db.collection('app_data').doc(appId).collection('users').doc(id).update({status});
             };
 
-            // Calculations
             const balance = transactions.reduce((acc, t) => t.type === 'income' ? acc + t.amount : acc - t.amount, 0);
             const pendingUsers = profiles.filter(p => p.status === 'pending');
             const pendingRequests = requests.filter(r => r.status === 'pending');
             const formatMoney = (n) => new Intl.NumberFormat('th-TH', {style:'currency', currency:'THB'}).format(n);
 
             // --- Views ---
-            
-            // 1. Login View
             if (!userData) {
                 const activeUsers = profiles.filter(p => p.status === 'active');
                 return (
@@ -277,11 +278,10 @@
                             <h1 className="text-2xl font-bold text-slate-800">Volvo Finance</h1>
                         </div>
 
-                        {/* User Grid */}
                         {activeUsers.length > 0 ? (
                             <div className="grid grid-cols-2 gap-4 w-full max-w-sm mb-6">
                                 {activeUsers.map(p => (
-                                    <button key={p.id} onClick={() => setSelectedProfile(p)} className="bg-white p-4 rounded-xl border hover:border-blue-500 shadow-sm flex flex-col items-center">
+                                    <button key={p.id} onClick={() => setSelectedProfile(p)} className="bg-white p-4 rounded-xl border hover:border-blue-500 shadow-sm flex flex-col items-center relative">
                                         <div className="w-12 h-12 bg-slate-100 rounded-full flex items-center justify-center font-bold text-slate-600 mb-2">{p.name[0]}</div>
                                         <div className="font-bold">{p.name}</div>
                                         <div className="text-xs text-slate-400 uppercase">{p.role}</div>
@@ -300,7 +300,15 @@
                             </div>
                         )}
 
-                        <div className="text-xs text-slate-400 mt-8 cursor-pointer" onClick={restoreAdmin}>[กู้คืนผู้ดูแลระบบ]</div>
+                        {/* Admin Tools Button */}
+                        <div className="flex gap-4 mt-4">
+                            <button onClick={() => setModals({...modals, adminAuth: true})} className="text-xs text-slate-400 hover:text-blue-600 flex items-center gap-1 bg-white px-3 py-1 rounded-full border border-slate-200">
+                                <Icon name="settings" size={12}/> จัดการผู้ใช้ (Admin)
+                            </button>
+                            <button onClick={restoreAdmin} className="text-xs text-slate-400 hover:text-blue-600 flex items-center gap-1 bg-white px-3 py-1 rounded-full border border-slate-200">
+                                <Icon name="refresh" size={12}/> กู้คืนระบบ
+                            </button>
+                        </div>
 
                         {/* PIN Modal */}
                         {selectedProfile && (
@@ -312,6 +320,23 @@
                                     <div className="flex gap-2">
                                         <button onClick={()=>setSelectedProfile(null)} className="flex-1 py-2 bg-slate-100 rounded">ยกเลิก</button>
                                         <button onClick={login} className="flex-1 py-2 bg-blue-600 text-white rounded font-bold">เข้าสู่ระบบ</button>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+
+                        {/* Admin Auth Modal */}
+                        {modals.adminAuth && (
+                            <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+                                <div className="bg-white p-6 rounded-2xl w-full max-w-xs text-center shadow-xl">
+                                    <div className="text-blue-600 mb-2 flex justify-center"><Icon name="lock" size={32}/></div>
+                                    <h3 className="font-bold text-lg mb-4">โหมดผู้ดูแล</h3>
+                                    <p className="text-xs text-slate-500 mb-4">ใส่รหัสผู้จัดการเพื่อจัดการรายชื่อ</p>
+                                    <input type="password" className="w-full text-center text-3xl border-b-2 py-2 mb-6 outline-none tracking-widest" 
+                                        autoFocus placeholder="PIN" value={inputs.adminPin || ''} onChange={e=>setInputs({...inputs, adminPin: e.target.value})} />
+                                    <div className="flex gap-2">
+                                        <button onClick={()=>setModals({...modals, adminAuth: false})} className="flex-1 py-2 bg-slate-100 rounded">ยกเลิก</button>
+                                        <button onClick={verifyAdmin} className="flex-1 py-2 bg-slate-800 text-white rounded font-bold">ยืนยัน</button>
                                     </div>
                                 </div>
                             </div>
@@ -335,6 +360,34 @@
                                 </div>
                             </div>
                         )}
+
+                        {/* User Management Modal (Login Screen Version) */}
+                        {modals.manage && (
+                            <div className="fixed inset-0 bg-black/60 flex items-center justify-center p-4 z-50">
+                                <div className="bg-white p-6 rounded-2xl w-full max-w-sm max-h-[80vh] overflow-y-auto shadow-2xl">
+                                    <div className="flex justify-between items-center mb-4 sticky top-0 bg-white pb-2 border-b">
+                                        <h3 className="font-bold text-lg flex items-center gap-2"><Icon name="settings"/> จัดการรายชื่อ</h3>
+                                        <button onClick={() => setModals({...modals, manage: false})}><Icon name="x"/></button>
+                                    </div>
+                                    <div className="space-y-3">
+                                        {profiles.map(p => (
+                                            <div key={p.id} className="flex items-center justify-between p-3 border rounded-xl bg-slate-50">
+                                                <div className="flex items-center gap-3">
+                                                    <div className="w-10 h-10 bg-white rounded-full flex items-center justify-center font-bold text-slate-500 shadow-sm border">{p.name[0]}</div>
+                                                    <div>
+                                                        <div className="font-bold text-slate-800">{p.name}</div>
+                                                        <div className="text-xs text-slate-500 uppercase">{p.role} • {p.status}</div>
+                                                    </div>
+                                                </div>
+                                                <button onClick={() => deleteUser(p.id)} className="p-2 text-rose-500 hover:bg-rose-100 rounded-lg transition-colors">
+                                                    <Icon name="trash" size={18} />
+                                                </button>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+                            </div>
+                        )}
                     </div>
                 );
             }
@@ -354,7 +407,6 @@
                     </header>
 
                     <main className="p-4 space-y-4 max-w-md mx-auto">
-                        {/* Balance Card */}
                         <div className="bg-slate-800 text-white p-6 rounded-3xl shadow-xl relative overflow-hidden">
                             <div className="relative z-10">
                                 <div className="text-slate-400 text-xs font-bold mb-1">BALANCE</div>
@@ -363,7 +415,6 @@
                             <div className="absolute right-0 top-0 w-32 h-32 bg-white/10 rounded-full blur-2xl -mr-10 -mt-10"></div>
                         </div>
 
-                        {/* Menu Grid */}
                         <div className="grid grid-cols-2 gap-3">
                             <button onClick={()=>setModals({...modals, request: true})} className="bg-white p-4 rounded-2xl shadow-sm border flex items-center gap-3 hover:bg-blue-50 transition">
                                 <div className="bg-blue-100 text-blue-600 p-2 rounded-full"><Icon name="minus"/></div>
@@ -390,7 +441,6 @@
                             </div>
                         )}
 
-                        {/* Recent Transactions */}
                         <div className="bg-white rounded-2xl border shadow-sm overflow-hidden">
                             <div className="bg-slate-50 p-3 border-b text-sm font-bold text-slate-500 flex justify-between">
                                 <span>รายการล่าสุด</span>
@@ -434,7 +484,6 @@
                         </div>
                     </main>
 
-                    {/* Modals */}
                     {modals.request && (
                         <div className="fixed inset-0 bg-black/60 flex items-center justify-center p-4 z-50">
                             <div className="bg-white p-6 rounded-2xl w-full max-w-sm">
@@ -476,14 +525,16 @@
                                             <div className="flex items-center gap-3">
                                                 <div className="w-10 h-10 bg-white rounded-full flex items-center justify-center font-bold border shadow-sm">{p.name[0]}</div>
                                                 <div>
-                                                    <div className="font-bold text-slate-800">{p.name} {userData.id === p.id && <span className="text-xs text-blue-600">(ฉัน)</span>}</div>
+                                                    <div className="font-bold text-slate-800">{p.name} {userData && userData.id === p.id && <span className="text-xs text-blue-600">(ฉัน)</span>}</div>
                                                     <div className="text-xs text-slate-500 uppercase">{p.role} • {p.status}</div>
                                                 </div>
                                             </div>
-                                            <div className="flex gap-1">
-                                                {p.status === 'pending' && <button onClick={()=>updateUserStatus(p.id, 'active')} className="p-2 text-emerald-600 bg-emerald-100 rounded-lg"><Icon name="check"/></button>}
-                                                {userData.id !== p.id && <button onClick={()=>deleteUser(p.id)} className="p-2 text-rose-600 hover:bg-rose-100 rounded-lg"><Icon name="trash"/></button>}
-                                            </div>
+                                            {/* Allow deletion if user is manager, or if in Admin Mode (userData is null) */}
+                                            {(!userData || userData.id !== p.id) && (
+                                                <button onClick={() => deleteUser(p.id)} className="p-2 text-rose-500 hover:bg-rose-100 rounded-lg transition-colors">
+                                                    <Icon name="trash" size={18} />
+                                                </button>
+                                            )}
                                         </div>
                                     ))}
                                 </div>
