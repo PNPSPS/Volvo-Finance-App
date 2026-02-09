@@ -39,7 +39,7 @@
 
         <!-- 3. LOGIN SCREEN -->
         <div id="login-screen" class="hidden min-h-screen flex flex-col items-center justify-center p-4">
-            <div class="w-full max-w-lg mb-10 text-center">
+            <div class="w-full max-w-lg mb-8 text-center">
                 <div class="w-20 h-20 bg-gradient-to-tr from-blue-700 to-slate-800 rounded-3xl flex items-center justify-center mx-auto mb-5 shadow-xl text-white text-4xl font-bold">V</div>
                 <h1 class="text-3xl font-bold text-slate-800">Volvo Finance</h1>
                 <p class="text-slate-600 mt-1">Service Center Management</p>
@@ -49,8 +49,16 @@
                 <!-- User cards will be injected here -->
             </div>
             
-            <div class="text-center mt-6">
-                <button onclick="restoreAdmin()" class="text-xs text-slate-400 underline">กู้คืนผู้จัดการ (Restore Admin)</button>
+            <!-- Admin Tools on Login Screen -->
+            <div class="flex gap-3 justify-center mt-4">
+                <button onclick="openModal('admin-auth-modal')" class="text-xs text-slate-500 hover:text-blue-700 flex items-center gap-1.5 bg-white/70 px-4 py-2 rounded-full shadow-sm border border-white/50 backdrop-blur-sm transition-all hover:bg-white">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12.22 2h-.44a2 2 0 0 1-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.47a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></svg>
+                    จัดการผู้ใช้ (Admin)
+                </button>
+                <button onclick="restoreAdmin()" class="text-xs text-slate-500 hover:text-blue-700 flex items-center gap-1.5 bg-white/70 px-4 py-2 rounded-full shadow-sm border border-white/50 backdrop-blur-sm transition-all hover:bg-white">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
+                    กู้คืนระบบ
+                </button>
             </div>
         </div>
 
@@ -64,6 +72,22 @@
                 <div class="flex gap-3">
                     <button onclick="closeModal('pin-modal')" class="flex-1 py-3 bg-slate-100 rounded-xl font-bold">ยกเลิก</button>
                     <button onclick="verifyPin()" class="flex-1 py-3 bg-blue-600 text-white rounded-xl font-bold shadow-lg">เข้าสู่ระบบ</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- ADMIN AUTH MODAL -->
+        <div id="admin-auth-modal" class="hidden fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4">
+            <div class="bg-white p-8 rounded-3xl w-full max-w-xs text-center shadow-2xl modal-enter">
+                <div class="w-16 h-16 bg-slate-100 text-slate-600 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+                </div>
+                <h3 class="font-bold text-xl mb-1 text-slate-800">โหมดผู้ดูแล</h3>
+                <p class="text-slate-500 mb-6 font-medium text-xs">ใส่รหัสผู้จัดการเพื่อจัดการรายชื่อ</p>
+                <input type="password" id="admin-pin-input" maxlength="6" class="w-full text-center text-4xl tracking-[0.5em] border-b-2 border-slate-200 focus:border-blue-500 outline-none py-2 mb-8 bg-transparent font-mono" placeholder="••••">
+                <div class="flex gap-3">
+                    <button onclick="closeModal('admin-auth-modal')" class="flex-1 py-3 bg-slate-100 rounded-xl font-bold">ยกเลิก</button>
+                    <button onclick="verifyAdminPin()" class="flex-1 py-3 bg-slate-800 text-white rounded-xl font-bold shadow-lg">ยืนยัน</button>
                 </div>
             </div>
         </div>
@@ -206,7 +230,7 @@
         // ==========================================
         // 🟢 ตั้งค่า: วางรหัส Config ที่นี่ (ถ้ามี)
         // ==========================================
-        const HARDCODED_CONFIG = {apiKey:"AIzaSyAmm8CJj4yU6Qclr1_l8yVwcQptOtnh0rE",authDomain:"volvo-finance.firebaseapp.com",projectId:"volvo-finance",storageBucket:"volvo-finance.firebasestorage.app",messagingSenderId:"713687952336",appId:"1:713687952336:web:00b6a228b36098cf5fe7d5",measurementId:"G-HFEWYL8GZ9"};
+        const HARDCODED_CONFIG ={apiKey:"AIzaSyAmm8CJj4yU6Qclr1_l8yVwcQptOtnh0rE",authDomain:"volvo-finance.firebaseapp.com",projectId:"volvo-finance",storageBucket:"volvofinance.firebasestorage.app",messagingSenderId:"713687952336",appId:"1:713687952336:web:00b6a228b36098cf5fe7d5",measurementId:"G-HFEWYL8GZ9"}; 
 
         // --- GLOBAL VARIABLES ---
         let db, auth;
@@ -272,6 +296,10 @@
                 .onSnapshot(snap => {
                     appData.users = snap.docs.map(d => ({id: d.id, ...d.data()}));
                     renderLoginScreen();
+                    // Update Manage List if open
+                    if(!document.getElementById('manage-modal').classList.contains('hidden')) {
+                        renderManageList();
+                    }
                     if(currentUser) renderApp();
                 });
 
@@ -419,11 +447,6 @@
                     listContainer.appendChild(div);
                 });
             }
-
-            // Render Manage Users List
-            if(!document.getElementById('manage-modal').classList.contains('hidden')) {
-                renderManageList();
-            }
         }
 
         function renderBreakdown() {
@@ -469,20 +492,43 @@
         function renderManageList() {
             const container = document.getElementById('manage-list');
             container.innerHTML = '';
+            
+            // Current User ID (null if in Admin Mode)
+            const currentUserId = currentUser ? currentUser.id : null;
+
             appData.users.forEach(u => {
                 const div = document.createElement('div');
                 div.className = 'flex items-center justify-between p-3 border rounded-xl bg-slate-50';
+                
+                // Show "approve" button if pending
+                let actionBtn = '';
+                if(u.status === 'pending') {
+                    actionBtn = `<button onclick="updateUserStatus('${u.id}', 'active')" class="p-2 bg-emerald-100 text-emerald-600 rounded-lg hover:bg-emerald-200"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></button>`;
+                }
+                
+                // Show "delete" button if not self
+                let deleteBtn = '';
+                if(u.id !== currentUserId) {
+                    deleteBtn = `<button onclick="deleteUser('${u.id}')" class="p-2 bg-white border border-rose-200 text-rose-500 rounded-lg hover:bg-rose-50 ml-1"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></button>`;
+                }
+
                 div.innerHTML = `
                     <div class="flex items-center gap-3">
                         <div class="w-10 h-10 bg-white rounded-full flex items-center justify-center font-bold text-slate-500 shadow-sm border">${u.name[0]}</div>
                         <div>
-                            <div class="font-bold text-slate-800">${u.name} ${currentUser.id === u.id ? '<span class="text-blue-600 text-xs">(ฉัน)</span>' : ''}</div>
-                            <div class="text-xs text-slate-500 uppercase">${u.role} • ${u.status}</div>
+                            <div class="font-bold text-slate-800 flex items-center gap-2">
+                                ${u.name} 
+                                ${u.id === currentUserId ? '<span class="text-xs text-blue-600">(ฉัน)</span>' : ''}
+                            </div>
+                            <div class="text-xs text-slate-500 uppercase flex items-center gap-1">
+                                ${u.role} • 
+                                <span class="${u.status === 'pending' ? 'text-amber-500 font-bold' : 'text-emerald-500'}">${u.status}</span>
+                            </div>
                         </div>
                     </div>
-                    <div class="flex gap-2">
-                        ${u.status === 'pending' ? `<button onclick="updateUserStatus('${u.id}', 'active')" class="p-2 bg-emerald-100 text-emerald-600 rounded-lg">✔</button>` : ''}
-                        ${currentUser.id !== u.id ? `<button onclick="deleteUser('${u.id}')" class="p-2 bg-white border border-rose-200 text-rose-500 rounded-lg">🗑</button>` : ''}
+                    <div class="flex items-center">
+                        ${actionBtn}
+                        ${deleteBtn}
                     </div>
                 `;
                 container.appendChild(div);
@@ -509,6 +555,19 @@
             } else {
                 alert("รหัส PIN ไม่ถูกต้อง");
                 document.getElementById('pin-input').value = '';
+            }
+        }
+
+        function verifyAdminPin() {
+            const pin = document.getElementById('admin-pin-input').value;
+            if(pin === '2121') {
+                closeModal('admin-auth-modal');
+                // Open manage modal directly
+                openModal('manage-modal');
+                renderManageList();
+            } else {
+                alert("รหัสผู้จัดการไม่ถูกต้อง (Default: 2121)");
+                document.getElementById('admin-pin-input').value = '';
             }
         }
 
