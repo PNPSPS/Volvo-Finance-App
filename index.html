@@ -32,30 +32,22 @@
             padding-bottom: 90px; 
         }
         
-        /* Glassmorphism Classes */
         .glass-card { 
             background: rgba(255, 255, 255, 0.7); 
             backdrop-filter: blur(16px); 
             border: 1px solid rgba(255,255,255,0.8); 
             box-shadow: 0 8px 32px rgba(0, 0, 0, 0.05); 
         }
-        .glass-panel {
-            background: rgba(255, 255, 255, 0.95);
-            box-shadow: 0 -10px 40px rgba(0,0,0,0.1);
-        }
 
-        /* Interactions */
         .btn-press { transition: transform 0.1s cubic-bezier(0.4, 0, 0.2, 1); }
         .btn-press:active { transform: scale(0.96); }
         
-        /* Animations */
         .animate-enter { animation: slideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1); }
         @keyframes slideUp { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
         
-        .toast-enter { animation: toastIn 0.3s cubic-bezier(0.16, 1, 0.3, 1); }
-        @keyframes toastIn { from { transform: translateY(100%); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+        .modal-enter { animation: modalPop 0.3s cubic-bezier(0.16, 1, 0.3, 1); }
+        @keyframes modalPop { from { transform: scale(0.95); opacity: 0; } to { transform: scale(1); opacity: 1; } }
 
-        /* Chart SVG */
         .chart-line {
             fill: none;
             stroke: rgba(255,255,255,0.3);
@@ -67,7 +59,6 @@
         
         .hidden { display: none !important; }
         
-        /* Custom Scrollbar */
         ::-webkit-scrollbar { width: 4px; }
         ::-webkit-scrollbar-track { background: transparent; }
         ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
@@ -75,7 +66,7 @@
 </head>
 <body>
     <div id="app-container">
-        <!-- 1. TOAST CONTAINER (Notifications) -->
+        <!-- 1. TOAST CONTAINER -->
         <div id="toast-container" class="fixed bottom-6 left-0 right-0 z-[100] flex flex-col items-center gap-2 pointer-events-none px-4"></div>
 
         <!-- 2. LOADING SCREEN -->
@@ -88,9 +79,6 @@
         <div id="config-screen" class="hidden min-h-screen flex flex-col items-center justify-center p-6">
             <div class="bg-white/90 backdrop-blur-xl p-8 rounded-[2rem] shadow-2xl w-full max-w-md border border-white">
                 <div class="text-center mb-6">
-                    <div class="w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-4 text-slate-400">
-                        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12.22 2h-.44a2 2 0 0 1-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.47a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></svg>
-                    </div>
                     <h2 class="text-xl font-bold text-slate-800">เชื่อมต่อระบบ</h2>
                     <p class="text-sm text-slate-500 mt-2">กรุณาใส่รหัส Firebase Config เพื่อเริ่มต้น</p>
                 </div>
@@ -111,12 +99,10 @@
                 <p class="text-slate-500 mt-2 text-sm font-medium">Service Center Management System</p>
             </div>
             
-            <div id="user-grid" class="grid grid-cols-2 gap-4 w-full max-w-sm mb-8 animate-enter" style="animation-delay: 0.1s;">
-                <!-- User cards -->
-            </div>
+            <div id="user-grid" class="grid grid-cols-2 gap-4 w-full max-w-sm mb-8 animate-enter" style="animation-delay: 0.1s;"></div>
             
             <div class="flex gap-3 animate-enter" style="animation-delay: 0.2s;">
-                <button onclick="openModal('admin-auth-modal')" class="text-xs font-bold text-slate-500 hover:text-blue-600 bg-white/60 px-4 py-2 rounded-full border border-white/50 backdrop-blur-sm shadow-sm transition-all flex items-center gap-1.5 btn-press">
+                <button onclick="openModal('adminAuth')" class="text-xs font-bold text-slate-500 hover:text-blue-600 bg-white/60 px-4 py-2 rounded-full border border-white/50 backdrop-blur-sm shadow-sm transition-all flex items-center gap-1.5 btn-press">
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12.22 2h-.44a2 2 0 0 1-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.47a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></svg>
                     จัดการผู้ใช้ (Admin)
                 </button>
@@ -145,45 +131,31 @@
             <main class="p-4 space-y-6 max-w-md mx-auto animate-enter">
                 <!-- Balance Card with Chart -->
                 <div class="relative bg-slate-900 text-white p-6 rounded-[2.5rem] shadow-2xl overflow-hidden group transition-all hover:shadow-blue-900/20">
-                    <!-- Dynamic Background -->
                     <div class="absolute inset-0 bg-gradient-to-br from-slate-800 via-slate-900 to-blue-950"></div>
                     <div class="absolute right-0 top-0 w-64 h-64 bg-blue-500/10 rounded-full blur-3xl -mr-16 -mt-16"></div>
-                    <div class="absolute left-0 bottom-0 w-48 h-48 bg-indigo-500/10 rounded-full blur-3xl -ml-10 -mb-10"></div>
-                    
-                    <!-- Content -->
                     <div class="relative z-10">
                         <div class="flex items-center justify-between mb-6">
                             <div class="flex items-center gap-2 text-blue-200/80 text-xs font-bold tracking-widest bg-white/5 px-3 py-1 rounded-full backdrop-blur-md border border-white/5">
-                                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
-                                SERVICE FUND
+                                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg> SERVICE FUND
                             </div>
-                            <svg class="text-slate-600" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 22V4a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v18M6 12H4a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h2M18 9h2a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2h-2M10 6h4M10 10h4M10 14h4M10 18h4"/></svg>
                         </div>
-                        
-                        <div class="flex items-baseline gap-1">
-                            <div id="balance-display" class="text-5xl font-bold tracking-tight text-white drop-shadow-sm">฿0.00</div>
-                        </div>
+                        <div id="balance-display" class="text-5xl font-bold tracking-tight text-white drop-shadow-sm">฿0.00</div>
                         <div class="text-slate-400 text-sm mt-1 font-medium">ยอดเงินคงเหลือปัจจุบัน</div>
                     </div>
-
-                    <!-- SVG Chart Area -->
                     <div class="absolute bottom-0 left-0 right-0 h-24 pointer-events-none opacity-40">
-                        <svg id="balance-chart" width="100%" height="100%" preserveAspectRatio="none" class="chart-line">
-                            <!-- Path will be injected via JS -->
-                        </svg>
+                        <svg id="balance-chart" width="100%" height="100%" preserveAspectRatio="none" class="chart-line"></svg>
                     </div>
                 </div>
 
                 <!-- Action Buttons -->
                 <div class="grid grid-cols-2 gap-4">
-                    <button onclick="openModal('request-modal')" class="glass-card p-5 rounded-[2rem] flex flex-col items-center justify-center gap-2 hover:bg-white transition-all btn-press border-0 group">
+                    <button onclick="openModal('request')" class="glass-card p-5 rounded-[2rem] flex flex-col items-center justify-center gap-2 hover:bg-white transition-all btn-press border-0 group">
                         <div class="w-14 h-14 bg-blue-50 text-blue-600 rounded-full flex items-center justify-center shadow-inner group-hover:bg-blue-600 group-hover:text-white transition-colors">
                             <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="5" y1="12" x2="19" y2="12"/></svg>
                         </div>
                         <span class="font-bold text-slate-700">เบิกเงิน</span>
                     </button>
-                    
-                    <button id="btn-deposit" onclick="openModal('deposit-modal')" class="glass-card p-5 rounded-[2rem] flex flex-col items-center justify-center gap-2 hover:bg-white transition-all btn-press border-0 group hidden">
+                    <button id="btn-deposit" onclick="openModal('deposit')" class="glass-card p-5 rounded-[2rem] flex flex-col items-center justify-center gap-2 hover:bg-white transition-all btn-press border-0 group hidden">
                         <div class="w-14 h-14 bg-emerald-50 text-emerald-600 rounded-full flex items-center justify-center shadow-inner group-hover:bg-emerald-600 group-hover:text-white transition-colors">
                             <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
                         </div>
@@ -191,7 +163,7 @@
                     </button>
                 </div>
 
-                <!-- Manager Tools (Hidden by default) -->
+                <!-- Manager Tools -->
                 <div id="manager-tools" class="hidden grid grid-cols-2 gap-4">
                     <button onclick="switchTab('approvals')" class="bg-gradient-to-r from-amber-50 to-orange-50 border border-amber-100 p-4 rounded-[1.5rem] flex justify-between items-center text-amber-900 shadow-sm btn-press">
                         <span class="font-bold text-sm">รออนุมัติ</span>
@@ -218,39 +190,31 @@
                         <div class="flex justify-between items-center mb-4">
                             <h3 id="list-title" class="font-bold text-xl text-slate-800 flex items-center gap-2">รายการล่าสุด</h3>
                         </div>
-                        
-                        <!-- Filter Chips -->
                         <div id="filter-chips" class="flex gap-2 overflow-x-auto pb-1 no-scrollbar">
                             <button onclick="switchTab('dashboard')" class="px-4 py-1.5 rounded-full text-xs font-bold bg-blue-600 text-white shadow-md transition-all whitespace-nowrap" id="tab-all">ภาพรวม</button>
                             <button onclick="switchTab('myRequests')" class="px-4 py-1.5 rounded-full text-xs font-bold bg-white text-slate-500 border border-slate-200 hover:bg-slate-50 transition-all whitespace-nowrap" id="tab-mine">ประวัติฉัน</button>
                         </div>
                     </div>
-                    
-                    <div id="main-list" class="divide-y divide-slate-50 max-h-[400px] overflow-y-auto bg-white/40">
-                        <!-- Items injected here -->
-                    </div>
+                    <div id="main-list" class="divide-y divide-slate-50 max-h-[400px] overflow-y-auto bg-white/40"></div>
                 </div>
             </main>
         </div>
 
-        <!-- ================= MODALS (Hidden) ================= -->
-        
-        <!-- Generic Modal Structure -->
-        <div id="modal-overlay" class="hidden fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-end sm:items-center justify-center p-4 transition-opacity duration-300">
-            <!-- Modal Content Injected Here -->
-        </div>
+        <!-- ================= GENERIC MODAL OVERLAY ================= -->
+        <div id="modal-overlay" class="hidden fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-end sm:items-center justify-center p-4 transition-opacity duration-300"></div>
 
     </div>
 
     <!-- MAIN SCRIPT -->
     <script>
         // --- CONFIGURATION ---
-        const HARDCODED_CONFIG ={apiKey:"AIzaSyAmm8CJj4yU6Qclr1_l8yVwcQptOtnh0rE",authDomain:"volvo-finance.firebaseapp.com",projectId:"volvo-finance",storageBucket:"volvofinance.firebasestorage.app",messagingSenderId:"713687952336",appId:"1:713687952336:web:00b6a228b36098cf5fe7d5",measurementId:"G-HFEWYL8GZ9"}; 
+        const HARDCODED_CONFIG ={apiKey:"AIzaSyAmm8CJj4yU6Qclr1_l8yVwcQptOtnh0rE",authDomain:"volvo-finance.firebaseapp.com",projectId: "volvo-finance",storageBucket:"volvo-finance.firebasestorage.app",messagingSenderId:"713687952336",appId:"1:713687952336:web:00b6a228b36098cf5fe7d5",measurementId:"G-HFEWYL8GZ9"}; 
 
         // --- GLOBAL STATE ---
         let db, auth;
         let currentUser = null;
         let selectedUser = null; 
+        let currentRegRole = 'staff';
         let appData = { users: [], transactions: [], requests: [] };
         let currentTab = 'dashboard';
         const appId = 'volvo-finance';
@@ -309,7 +273,10 @@
             publicRef.collection('users').onSnapshot(snap => {
                 appData.users = snap.docs.map(d => ({id: d.id, ...d.data()}));
                 if(!currentUser) renderLoginScreen();
-                if(document.getElementById('manage-list')) renderManageList(); // Live update manage list
+                // If manage modal is open, refresh it
+                if(document.getElementById('modal-overlay').querySelector('h3')?.innerText === 'จัดการพนักงาน') {
+                    renderManageModal();
+                }
             });
 
             publicRef.collection('transactions').orderBy('createdAt', 'desc').limit(50).onSnapshot(snap => {
@@ -328,7 +295,6 @@
         }
 
         // --- RENDERERS ---
-        
         function renderConfigScreen() {
             document.getElementById('loading-screen').classList.add('hidden');
             document.getElementById('config-screen').classList.remove('hidden');
@@ -368,15 +334,12 @@
             document.getElementById('login-screen').classList.add('hidden');
             document.getElementById('main-app').classList.remove('hidden');
             
-            // 1. Profile Info
             document.getElementById('current-user-display').innerHTML = `${currentUser.name} <span class="bg-slate-100 px-1.5 rounded text-[10px] uppercase text-slate-500 border border-slate-200">${currentUser.role}</span>`;
             
-            // 2. Balance & Chart
             const balance = appData.transactions.reduce((acc, t) => t.type === 'income' ? acc + t.amount : acc - t.amount, 0);
             document.getElementById('balance-display').innerText = new Intl.NumberFormat('th-TH', {style:'currency', currency:'THB'}).format(balance);
             drawChart(appData.transactions);
 
-            // 3. Manager Controls
             const isManager = currentUser.role === 'manager';
             document.getElementById('btn-deposit').classList.toggle('hidden', !isManager);
             document.getElementById('manager-tools').classList.toggle('hidden', !isManager);
@@ -391,7 +354,6 @@
                 pCount.classList.add('hidden');
             }
 
-            // 4. List Rendering based on Tab
             const list = document.getElementById('main-list');
             list.innerHTML = '';
             
@@ -420,11 +382,9 @@
             } else {
                 items.forEach(item => {
                     const el = document.createElement('div');
-                    el.className = 'p-4 flex justify-between items-center hover:bg-blue-50/50 transition-colors animate-enter';
                     
                     if(currentTab === 'approvals') {
-                        // Approval Card Style
-                        el.className = 'p-5 bg-amber-50/60 border-b border-amber-100 last:border-0';
+                        el.className = 'p-5 bg-amber-50/60 border-b border-amber-100 last:border-0 animate-enter';
                         el.innerHTML = `
                             <div class="w-full">
                                 <div class="flex justify-between mb-2">
@@ -441,7 +401,7 @@
                             </div>
                         `;
                     } else {
-                        // Standard List Style
+                        el.className = 'p-4 flex justify-between items-center hover:bg-blue-50/50 transition-colors animate-enter';
                         const isIncome = item.type === 'income';
                         const icon = isIncome ? 
                             `<svg class="text-emerald-600" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>` : 
@@ -474,39 +434,31 @@
         }
 
         // --- FEATURE FUNCTIONS ---
-
         function drawChart(txs) {
-            // Simple logic to create a trend line SVG path based on running balance
             if(txs.length < 2) return;
-            const sorted = [...txs].reverse(); // Oldest first
+            const sorted = [...txs].reverse();
             let running = 0;
-            const points = sorted.map((t, i) => {
+            const points = sorted.map((t) => {
                 running += (t.type === 'income' ? t.amount : -t.amount);
                 return running;
             });
-            
             const min = Math.min(...points);
             const max = Math.max(...points);
             const range = max - min || 1;
-            const width = 100; // viewbox units
-            const height = 100;
-            
+            const width = 100, height = 100;
             const pathData = points.map((val, i) => {
                 const x = (i / (points.length - 1)) * width;
-                const y = height - ((val - min) / range) * height; // Invert Y
+                const y = height - ((val - min) / range) * height;
                 return `${x},${y}`;
             }).join(' ');
-
             document.getElementById('balance-chart').innerHTML = `<polyline points="${pathData}" class="chart-line" />`;
         }
 
         function renderBreakdown() {
             const container = document.getElementById('breakdown-list');
             container.innerHTML = '';
-            
             const summary = { scrap: 0, contribution: 0, fine: 0, activity: 0, other: 0 };
             let totalIncome = 0;
-            
             appData.transactions.forEach(t => {
                 if(t.type === 'income') {
                     const cat = t.category || 'other';
@@ -514,12 +466,10 @@
                     totalIncome += t.amount;
                 }
             });
-
             if(totalIncome === 0) {
                 container.innerHTML = '<div class="text-xs text-slate-400 text-center py-2">ยังไม่มีข้อมูลรายรับ</div>';
                 return;
             }
-
             const labels = {
                 scrap: {l:'รีไซเคิล', i:'♻️', c:'bg-orange-500'},
                 contribution: {l:'เงินสมทบ', i:'🤝', c:'bg-indigo-500'},
@@ -527,21 +477,17 @@
                 activity: {l:'กิจกรรม', i:'🎉', c:'bg-purple-500'},
                 other: {l:'อื่นๆ', i:'📦', c:'bg-slate-500'}
             };
-
             Object.entries(summary).sort((a,b) => b[1] - a[1]).forEach(([key, val]) => {
                 if(val > 0) {
                     const meta = labels[key] || labels.other;
                     const percent = ((val/totalIncome)*100).toFixed(0);
-                    
                     container.innerHTML += `
                         <div>
                             <div class="flex justify-between text-sm mb-1">
                                 <span class="font-bold text-slate-700 flex items-center gap-2"><span class="bg-white px-1 rounded shadow-sm text-xs">${meta.i}</span> ${meta.l}</span>
                                 <span class="text-slate-500 font-medium">${formatMoney(val)} <span class="text-xs opacity-50 ml-1">(${percent}%)</span></span>
                             </div>
-                            <div class="w-full bg-slate-100 rounded-full h-2 overflow-hidden">
-                                <div class="${meta.c} h-full rounded-full" style="width: ${percent}%"></div>
-                            </div>
+                            <div class="w-full bg-slate-100 rounded-full h-2 overflow-hidden"><div class="${meta.c} h-full rounded-full" style="width: ${percent}%"></div></div>
                         </div>
                     `;
                 }
@@ -549,12 +495,7 @@
         }
 
         function triggerConfetti() {
-            confetti({
-                particleCount: 100,
-                spread: 70,
-                origin: { y: 0.6 },
-                colors: ['#059669', '#3b82f6', '#fbbf24']
-            });
+            confetti({ particleCount: 100, spread: 70, origin: { y: 0.6 }, colors: ['#059669', '#3b82f6', '#fbbf24'] });
         }
 
         function showToast(msg, type='success') {
@@ -562,10 +503,8 @@
             const el = document.createElement('div');
             const bg = type === 'success' ? 'bg-slate-800' : 'bg-rose-600';
             const icon = type === 'success' ? '✅' : '⚠️';
-            
             el.className = `${bg} text-white px-4 py-3 rounded-xl shadow-2xl flex items-center gap-3 text-sm font-medium toast-enter backdrop-blur-md`;
             el.innerHTML = `<span>${icon}</span> <span>${msg}</span>`;
-            
             container.appendChild(el);
             setTimeout(() => {
                 el.style.opacity = '0';
@@ -575,16 +514,55 @@
             }, 3000);
         }
 
-        // --- MODAL & LOGIC HANDLERS ---
-
-        function renderModal(type) {
+        // --- MODAL HANDLERS ---
+        function renderModal(type, data = null) {
             const overlay = document.getElementById('modal-overlay');
             overlay.classList.remove('hidden');
-            overlay.innerHTML = ''; // Clear previous
-
+            overlay.innerHTML = '';
             let content = '';
-            
-            if(type === 'register') {
+
+            if (type === 'pin' && data) {
+                content = `
+                    <div class="bg-white p-8 rounded-[2rem] w-full max-w-xs text-center shadow-2xl modal-enter">
+                        <div class="w-16 h-16 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center mx-auto mb-4 font-bold text-2xl shadow-inner">${data.name[0]}</div>
+                        <h3 class="font-bold text-xl mb-1 text-slate-800">ยินดีต้อนรับ</h3>
+                        <p class="text-slate-500 mb-8 font-medium">คุณ ${data.name}</p>
+                        <input id="pin-input" type="password" maxlength="6" class="w-full text-center text-4xl tracking-[0.5em] border-b-2 border-slate-200 focus:border-blue-500 outline-none py-2 mb-8 bg-transparent font-mono text-slate-800" placeholder="••••" autoFocus>
+                        <div class="flex gap-3">
+                            <button onclick="closeModal()" class="flex-1 py-3 bg-slate-100 text-slate-600 rounded-xl font-bold hover:bg-slate-200">ยกเลิก</button>
+                            <button onclick="verifyPin('${data.id}')" class="flex-1 py-3 bg-blue-600 text-white rounded-xl font-bold shadow-lg">เข้าสู่ระบบ</button>
+                        </div>
+                    </div>`;
+            } else if (type === 'request') {
+                content = `
+                    <div class="bg-white p-6 rounded-[2rem] w-full max-w-sm shadow-2xl modal-enter">
+                        <h3 class="font-bold text-xl mb-6 text-slate-800 flex items-center gap-2"><div class="bg-blue-100 p-2 rounded-xl text-blue-600"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="5" y1="12" x2="19" y2="12"/></svg></div> ขอเบิกเงิน</h3>
+                        <input id="req-desc" class="w-full border p-4 rounded-2xl mb-3 bg-slate-50 focus:bg-white focus:ring-2 focus:ring-blue-500 outline-none transition-all" placeholder="รายการค่าใช้จ่าย" autoFocus>
+                        <input id="req-amount" type="number" class="w-full border p-4 rounded-2xl mb-6 bg-slate-50 focus:bg-white focus:ring-2 focus:ring-blue-500 outline-none transition-all text-lg font-medium" placeholder="จำนวนเงิน">
+                        <div class="flex gap-3">
+                            <button onclick="closeModal()" class="flex-1 py-3 bg-slate-100 rounded-xl font-bold text-slate-600">ยกเลิก</button>
+                            <button onclick="submitRequest()" class="flex-1 py-3 bg-blue-600 text-white rounded-xl font-bold shadow-lg">ส่งคำขอ</button>
+                        </div>
+                    </div>`;
+            } else if (type === 'deposit') {
+                content = `
+                    <div class="bg-white p-6 rounded-[2rem] w-full max-w-sm shadow-2xl modal-enter">
+                        <h3 class="font-bold text-xl mb-6 text-slate-800 flex items-center gap-2"><div class="bg-emerald-100 p-2 rounded-xl text-emerald-600"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg></div> เติมเงิน</h3>
+                        <select id="dep-cat" class="w-full border p-4 rounded-2xl mb-3 bg-slate-50 focus:bg-white focus:ring-2 focus:ring-emerald-500 outline-none transition-all appearance-none">
+                            <option value="scrap">♻️ ขายของเก่า/รีไซเคิล</option>
+                            <option value="contribution">🤝 เงินสมทบ/บริจาค</option>
+                            <option value="fine">⚠️ ค่าปรับ</option>
+                            <option value="activity">🎉 กิจกรรมพิเศษ</option>
+                            <option value="other">📦 อื่นๆ</option>
+                        </select>
+                        <input id="dep-desc" class="w-full border p-4 rounded-2xl mb-3 bg-slate-50 focus:bg-white focus:ring-2 focus:ring-emerald-500 outline-none transition-all" placeholder="รายละเอียดเพิ่มเติม">
+                        <input id="dep-amount" type="number" class="w-full border p-4 rounded-2xl mb-6 bg-slate-50 focus:bg-white focus:ring-2 focus:ring-emerald-500 outline-none transition-all text-lg font-medium" placeholder="จำนวนเงิน">
+                        <div class="flex gap-3">
+                            <button onclick="closeModal()" class="flex-1 py-3 bg-slate-100 rounded-xl font-bold text-slate-600">ยกเลิก</button>
+                            <button onclick="submitDeposit()" class="flex-1 py-3 bg-emerald-600 text-white rounded-xl font-bold shadow-lg">ยืนยัน</button>
+                        </div>
+                    </div>`;
+            } else if(type === 'register') {
                 content = `
                     <div class="bg-white p-6 rounded-[2rem] w-full max-w-sm shadow-2xl modal-enter">
                         <h3 class="font-bold text-xl mb-4 text-slate-800">สมัครสมาชิกใหม่</h3>
@@ -596,10 +574,9 @@
                         <input id="m-pin" type="tel" maxlength="4" class="w-full p-4 bg-slate-50 rounded-xl border border-slate-200 mb-6 text-center text-2xl tracking-[0.5em] outline-none focus:ring-2 focus:ring-blue-500" placeholder="••••">
                         <div class="flex gap-3">
                             <button onclick="closeModal()" class="flex-1 py-3 bg-slate-100 rounded-xl font-bold text-slate-600">ยกเลิก</button>
-                            <button onclick="submitRegister()" class="flex-1 py-3 bg-blue-600 text-white rounded-xl font-bold shadow-lg shadow-blue-500/30">ยืนยัน</button>
+                            <button onclick="submitRegister()" class="flex-1 py-3 bg-blue-600 text-white rounded-xl font-bold shadow-lg">ยืนยัน</button>
                         </div>
-                    </div>
-                `;
+                    </div>`;
             } else if (type === 'adminAuth') {
                 content = `
                     <div class="bg-white p-8 rounded-[2rem] w-full max-w-xs text-center shadow-2xl modal-enter">
@@ -611,18 +588,65 @@
                             <button onclick="closeModal()" class="flex-1 py-3 bg-slate-100 rounded-xl font-bold text-slate-600">ยกเลิก</button>
                             <button onclick="if(document.getElementById('m-pin').value==='2121'){closeModal();renderManageModal();}else{showToast('รหัสผิด','error')}" class="flex-1 py-3 bg-slate-800 text-white rounded-xl font-bold shadow-lg">ยืนยัน</button>
                         </div>
-                    </div>
-                `;
+                    </div>`;
             }
 
             overlay.innerHTML = content;
+            // Auto focus input if exists
+            setTimeout(() => {
+                const input = overlay.querySelector('input');
+                if(input) input.focus();
+            }, 100);
+        }
+
+        function openModal(type) {
+            if(type === 'manage-modal') {
+                renderManageModal();
+            } else {
+                // Map old IDs to new render types
+                const map = { 'request-modal': 'request', 'deposit-modal': 'deposit', 'register-modal': 'register', 'admin-auth-modal': 'adminAuth' };
+                renderModal(map[type] || type);
+            }
+        }
+        
+        function closeModal() {
+            document.getElementById('modal-overlay').classList.add('hidden');
+        }
+
+        function openPinModal(u) {
+            selectedUser = u;
+            renderModal('pin', u);
+        }
+
+        // ... [Functions renderManageModal, verifyPin, etc. remain the same as previous logic] ...
+        
+        function verifyPin() {
+            const pin = document.getElementById('pin-input').value;
+            if(pin === selectedUser.pin) {
+                currentUser = selectedUser;
+                closeModal();
+                renderApp();
+                showToast(`ยินดีต้อนรับคุณ ${currentUser.name}`);
+            } else {
+                showToast("รหัส PIN ไม่ถูกต้อง", "error");
+                document.getElementById('pin-input').value = '';
+            }
+        }
+
+        function logout() {
+            currentUser = null;
+            document.getElementById('main-app').classList.add('hidden');
+            document.getElementById('login-screen').classList.remove('hidden');
+        }
+
+        function switchTab(tab) {
+            currentTab = tab;
+            renderApp();
         }
 
         function renderManageModal() {
             const overlay = document.getElementById('modal-overlay');
             overlay.classList.remove('hidden');
-            
-            // Build user list HTML
             let userListHTML = '';
             appData.users.forEach(u => {
                 userListHTML += `
@@ -638,10 +662,8 @@
                             ${u.status === 'pending' ? `<button onclick="updateUserStatus('${u.id}', 'active')" class="w-8 h-8 bg-emerald-100 text-emerald-600 rounded-lg flex items-center justify-center">✓</button>` : ''}
                             <button onclick="deleteUser('${u.id}')" class="w-8 h-8 bg-white border border-rose-100 text-rose-500 rounded-lg flex items-center justify-center hover:bg-rose-50">🗑</button>
                         </div>
-                    </div>
-                `;
+                    </div>`;
             });
-
             overlay.innerHTML = `
                 <div class="bg-white p-6 rounded-[2rem] w-full max-w-sm shadow-2xl h-[70vh] flex flex-col modal-enter">
                     <div class="flex justify-between items-center mb-4 pb-2 border-b border-slate-100">
@@ -649,68 +671,13 @@
                         <button onclick="closeModal()" class="w-8 h-8 bg-slate-100 rounded-full flex items-center justify-center text-slate-500">✕</button>
                     </div>
                     <div class="flex-1 overflow-y-auto">${userListHTML}</div>
-                </div>
-            `;
+                </div>`;
         }
-
-        // Reusing same modal logic for Request/Deposit to keep file small
-        function openModal(id) {
-            // For simple static modals defined in HTML
-            if(document.getElementById(id)) {
-                document.getElementById(id).classList.remove('hidden');
-            } else {
-                renderModal(id.replace('-modal', '')); // For dynamic ones
-            }
-        }
-        
-        function closeModal(id) {
-            if(id) {
-                document.getElementById(id).classList.add('hidden');
-            } else {
-                document.getElementById('modal-overlay').classList.add('hidden');
-            }
-        }
-
-        function openPinModal(u) {
-            selectedUser = u;
-            document.getElementById('pin-user-name').innerText = u.name;
-            document.getElementById('pin-user-avatar').innerText = u.name[0];
-            document.getElementById('pin-input').value = '';
-            document.getElementById('pin-modal').classList.remove('hidden');
-            setTimeout(() => document.getElementById('pin-input').focus(), 100);
-        }
-
-        function verifyPin() {
-            const pin = document.getElementById('pin-input').value;
-            if(pin === selectedUser.pin) {
-                currentUser = selectedUser;
-                closeModal('pin-modal');
-                renderApp();
-                showToast(`ยินดีต้อนรับคุณ ${currentUser.name}`);
-            } else {
-                showToast("รหัส PIN ไม่ถูกต้อง", "error");
-                document.getElementById('pin-input').value = '';
-            }
-        }
-
-        function switchTab(tab) {
-            currentTab = tab;
-            renderApp();
-        }
-
-        function logout() {
-            currentUser = null;
-            document.getElementById('main-app').classList.add('hidden');
-            document.getElementById('login-screen').classList.remove('hidden');
-        }
-
-        // --- ASYNC ACTIONS ---
 
         async function submitRegister() {
             const name = document.getElementById('m-name').value;
             const pin = document.getElementById('m-pin').value;
             if(!name || pin.length < 4) return showToast("กรอกข้อมูลให้ครบ", "error");
-            
             try {
                 await db.collection('artifacts').doc(appId).collection('public').doc('data').collection('users').add({
                     name, role: currentRegRole, pin, status: 'pending', createdAt: firebase.firestore.FieldValue.serverTimestamp()
@@ -734,11 +701,10 @@
             const desc = document.getElementById('req-desc').value;
             const amount = document.getElementById('req-amount').value;
             if(!desc || !amount) return;
-            
             await db.collection('artifacts').doc(appId).collection('public').doc('data').collection('requests').add({
                 description: desc, amount: parseFloat(amount), requester: currentUser.name, requesterId: currentUser.id, status: 'pending', createdAt: firebase.firestore.FieldValue.serverTimestamp(), type: 'expense'
             });
-            closeModal('request-modal');
+            closeModal();
             showToast("ส่งคำขอเบิกแล้ว");
         }
 
@@ -747,11 +713,10 @@
             const amount = document.getElementById('dep-amount').value;
             const cat = document.getElementById('dep-cat').value;
             if(!amount) return;
-
             await db.collection('artifacts').doc(appId).collection('public').doc('data').collection('transactions').add({
                 description: desc || 'เงินเติม', amount: parseFloat(amount), category: cat, performer: currentUser.name, type: 'income', createdAt: firebase.firestore.FieldValue.serverTimestamp()
             });
-            closeModal('deposit-modal');
+            closeModal();
             triggerConfetti();
             showToast("เติมเงินสำเร็จ! 🎉");
         }
@@ -773,14 +738,14 @@
         async function updateUserStatus(id, status) {
             await db.collection('artifacts').doc(appId).collection('public').doc('data').collection('users').doc(id).update({status});
             showToast("อัปเดตสถานะแล้ว");
-            if(document.getElementById('modal-overlay').classList.contains('hidden') === false) renderManageModal(); // Refresh list
+            if(document.getElementById('modal-overlay').querySelector('h3')?.innerText === 'จัดการพนักงาน') renderManageModal();
         }
 
         async function deleteUser(id) {
             if(confirm("ยืนยันลบผู้ใช้นี้?")) {
                 await db.collection('artifacts').doc(appId).collection('public').doc('data').collection('users').doc(id).delete();
                 showToast("ลบผู้ใช้แล้ว");
-                if(document.getElementById('modal-overlay').classList.contains('hidden') === false) renderManageModal(); // Refresh list
+                if(document.getElementById('modal-overlay').querySelector('h3')?.innerText === 'จัดการพนักงาน') renderManageModal();
             }
         }
 
