@@ -2,246 +2,260 @@
 <html lang="th">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Volvo Finance Service</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Volvo Finance Service (Premium)</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Firebase -->
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+    
+    <!-- Confetti Library (Lightweight) -->
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+
     <style>
-        body { font-family: 'Prompt', sans-serif; background-color: #f1f5f9; background-image: url('https://images.unsplash.com/photo-1625047509168-a7026f36de04?q=80&w=2564&auto=format&fit=crop'); background-size: cover; background-position: center; background-attachment: fixed; min-height: 100vh; }
-        #app-container { background-color: rgba(255, 255, 255, 0.85); min-height: 100vh; backdrop-filter: blur(8px); padding-bottom: 80px; }
-        .glass-card { background: rgba(255, 255, 255, 0.9); backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.7); box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); }
+        body { 
+            font-family: 'Prompt', sans-serif; 
+            background-image: url('https://images.unsplash.com/photo-1625047509168-a7026f36de04?q=80&w=2564&auto=format&fit=crop'); 
+            background-size: cover; 
+            background-position: center; 
+            background-attachment: fixed; 
+            min-height: 100vh; 
+            -webkit-tap-highlight-color: transparent;
+        }
+        #app-container { 
+            background: linear-gradient(180deg, rgba(255,255,255,0.85) 0%, rgba(241,245,249,0.95) 100%);
+            min-height: 100vh; 
+            backdrop-filter: blur(12px); 
+            padding-bottom: 90px; 
+        }
+        
+        /* Glassmorphism Classes */
+        .glass-card { 
+            background: rgba(255, 255, 255, 0.7); 
+            backdrop-filter: blur(16px); 
+            border: 1px solid rgba(255,255,255,0.8); 
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.05); 
+        }
+        .glass-panel {
+            background: rgba(255, 255, 255, 0.95);
+            box-shadow: 0 -10px 40px rgba(0,0,0,0.1);
+        }
+
+        /* Interactions */
+        .btn-press { transition: transform 0.1s cubic-bezier(0.4, 0, 0.2, 1); }
+        .btn-press:active { transform: scale(0.96); }
+        
+        /* Animations */
+        .animate-enter { animation: slideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1); }
+        @keyframes slideUp { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+        
+        .toast-enter { animation: toastIn 0.3s cubic-bezier(0.16, 1, 0.3, 1); }
+        @keyframes toastIn { from { transform: translateY(100%); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+
+        /* Chart SVG */
+        .chart-line {
+            fill: none;
+            stroke: rgba(255,255,255,0.3);
+            stroke-width: 3;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+            filter: drop-shadow(0 4px 6px rgba(0,0,0,0.1));
+        }
+        
         .hidden { display: none !important; }
-        .btn-press:active { transform: scale(0.95); }
-        /* Modal Animation */
-        .modal-enter { animation: slideUp 0.3s ease-out; }
-        @keyframes slideUp { from { transform: translateY(100%); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+        
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar { width: 4px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
     </style>
 </head>
 <body>
     <div id="app-container">
-        <!-- 1. LOADING SCREEN -->
-        <div id="loading-screen" class="fixed inset-0 flex items-center justify-center bg-white z-50">
-            <div class="text-center text-slate-500 animate-pulse">กำลังโหลดข้อมูล...</div>
+        <!-- 1. TOAST CONTAINER (Notifications) -->
+        <div id="toast-container" class="fixed bottom-6 left-0 right-0 z-[100] flex flex-col items-center gap-2 pointer-events-none px-4"></div>
+
+        <!-- 2. LOADING SCREEN -->
+        <div id="loading-screen" class="fixed inset-0 flex flex-col items-center justify-center bg-white z-50">
+            <div class="w-16 h-16 border-4 border-blue-100 border-t-blue-600 rounded-full animate-spin mb-4"></div>
+            <div class="text-slate-400 font-medium animate-pulse">Connecting to Volvo Finance...</div>
         </div>
 
-        <!-- 2. CONFIG SCREEN -->
-        <div id="config-screen" class="hidden min-h-screen flex flex-col items-center justify-center p-4">
-            <div class="bg-white p-8 rounded-2xl shadow-xl w-full max-w-md">
-                <h2 class="text-xl font-bold mb-4 text-center">ตั้งค่าการเชื่อมต่อ</h2>
-                <textarea id="config-input" class="w-full h-40 p-3 border rounded-xl mb-4 text-xs font-mono bg-slate-50" placeholder='วางโค้ด firebaseConfig ที่นี่...'></textarea>
-                <div id="config-error" class="text-red-500 text-xs mb-2 hidden"></div>
-                <button onclick="saveConfig()" class="w-full bg-blue-600 text-white py-3 rounded-xl font-bold shadow-lg">บันทึกและเริ่มใช้งาน</button>
+        <!-- 3. CONFIG SCREEN -->
+        <div id="config-screen" class="hidden min-h-screen flex flex-col items-center justify-center p-6">
+            <div class="bg-white/90 backdrop-blur-xl p-8 rounded-[2rem] shadow-2xl w-full max-w-md border border-white">
+                <div class="text-center mb-6">
+                    <div class="w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-4 text-slate-400">
+                        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12.22 2h-.44a2 2 0 0 1-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.47a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></svg>
+                    </div>
+                    <h2 class="text-xl font-bold text-slate-800">เชื่อมต่อระบบ</h2>
+                    <p class="text-sm text-slate-500 mt-2">กรุณาใส่รหัส Firebase Config เพื่อเริ่มต้น</p>
+                </div>
+                <textarea id="config-input" class="w-full h-32 p-4 border border-slate-200 rounded-xl mb-4 text-xs font-mono bg-slate-50 focus:ring-2 focus:ring-blue-500 outline-none" placeholder='วางโค้ด firebaseConfig ที่นี่...'></textarea>
+                <div id="config-error" class="text-red-500 text-xs mb-4 text-center hidden"></div>
+                <button onclick="saveConfig()" class="w-full bg-blue-600 hover:bg-blue-700 text-white py-3.5 rounded-xl font-bold shadow-lg shadow-blue-500/30 transition-all btn-press">บันทึกและเริ่มใช้งาน</button>
             </div>
         </div>
 
-        <!-- 3. LOGIN SCREEN -->
+        <!-- 4. LOGIN SCREEN -->
         <div id="login-screen" class="hidden min-h-screen flex flex-col items-center justify-center p-4">
-            <div class="w-full max-w-lg mb-8 text-center">
-                <div class="w-20 h-20 bg-gradient-to-tr from-blue-700 to-slate-800 rounded-3xl flex items-center justify-center mx-auto mb-5 shadow-xl text-white text-4xl font-bold">V</div>
-                <h1 class="text-3xl font-bold text-slate-800">Volvo Finance</h1>
-                <p class="text-slate-600 mt-1">Service Center Management</p>
+            <div class="w-full max-w-lg mb-8 text-center animate-enter">
+                <div class="relative w-24 h-24 mx-auto mb-6">
+                    <div class="absolute inset-0 bg-blue-500 rounded-[2rem] rotate-6 opacity-20"></div>
+                    <div class="absolute inset-0 bg-blue-600 rounded-[2rem] -rotate-3 shadow-2xl flex items-center justify-center text-white text-5xl font-bold">V</div>
+                </div>
+                <h1 class="text-3xl font-bold text-slate-800 tracking-tight">Volvo Finance</h1>
+                <p class="text-slate-500 mt-2 text-sm font-medium">Service Center Management System</p>
             </div>
             
-            <div id="user-grid" class="grid grid-cols-2 gap-4 w-full max-w-sm mb-6">
-                <!-- User cards will be injected here -->
+            <div id="user-grid" class="grid grid-cols-2 gap-4 w-full max-w-sm mb-8 animate-enter" style="animation-delay: 0.1s;">
+                <!-- User cards -->
             </div>
             
-            <!-- Admin Tools on Login Screen -->
-            <div class="flex gap-3 justify-center mt-4">
-                <button onclick="openModal('admin-auth-modal')" class="text-xs text-slate-500 hover:text-blue-700 flex items-center gap-1.5 bg-white/70 px-4 py-2 rounded-full shadow-sm border border-white/50 backdrop-blur-sm transition-all hover:bg-white">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12.22 2h-.44a2 2 0 0 1-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.47a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></svg>
+            <div class="flex gap-3 animate-enter" style="animation-delay: 0.2s;">
+                <button onclick="openModal('admin-auth-modal')" class="text-xs font-bold text-slate-500 hover:text-blue-600 bg-white/60 px-4 py-2 rounded-full border border-white/50 backdrop-blur-sm shadow-sm transition-all flex items-center gap-1.5 btn-press">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12.22 2h-.44a2 2 0 0 1-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.47a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></svg>
                     จัดการผู้ใช้ (Admin)
                 </button>
-                <button onclick="restoreAdmin()" class="text-xs text-slate-500 hover:text-blue-700 flex items-center gap-1.5 bg-white/70 px-4 py-2 rounded-full shadow-sm border border-white/50 backdrop-blur-sm transition-all hover:bg-white">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
+                <button onclick="restoreAdmin()" class="text-xs font-bold text-slate-500 hover:text-blue-600 bg-white/60 px-4 py-2 rounded-full border border-white/50 backdrop-blur-sm shadow-sm transition-all flex items-center gap-1.5 btn-press">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
                     กู้คืนระบบ
                 </button>
             </div>
         </div>
 
-        <!-- 4. PIN MODAL -->
-        <div id="pin-modal" class="hidden fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4">
-            <div class="bg-white p-8 rounded-3xl w-full max-w-xs text-center shadow-2xl modal-enter">
-                <div id="pin-user-avatar" class="w-16 h-16 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center mx-auto mb-4 font-bold text-2xl"></div>
-                <h3 class="font-bold text-xl mb-1 text-slate-800">ยินดีต้อนรับ</h3>
-                <p id="pin-user-name" class="text-slate-500 mb-8 font-medium"></p>
-                <input type="password" id="pin-input" maxlength="6" class="w-full text-center text-4xl tracking-[0.5em] border-b-2 border-slate-200 focus:border-blue-500 outline-none py-2 mb-8 bg-transparent font-mono" placeholder="••••">
-                <div class="flex gap-3">
-                    <button onclick="closeModal('pin-modal')" class="flex-1 py-3 bg-slate-100 rounded-xl font-bold">ยกเลิก</button>
-                    <button onclick="verifyPin()" class="flex-1 py-3 bg-blue-600 text-white rounded-xl font-bold shadow-lg">เข้าสู่ระบบ</button>
-                </div>
-            </div>
-        </div>
-
-        <!-- ADMIN AUTH MODAL -->
-        <div id="admin-auth-modal" class="hidden fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4">
-            <div class="bg-white p-8 rounded-3xl w-full max-w-xs text-center shadow-2xl modal-enter">
-                <div class="w-16 h-16 bg-slate-100 text-slate-600 rounded-full flex items-center justify-center mx-auto mb-4">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
-                </div>
-                <h3 class="font-bold text-xl mb-1 text-slate-800">โหมดผู้ดูแล</h3>
-                <p class="text-slate-500 mb-6 font-medium text-xs">ใส่รหัสผู้จัดการเพื่อจัดการรายชื่อ</p>
-                <input type="password" id="admin-pin-input" maxlength="6" class="w-full text-center text-4xl tracking-[0.5em] border-b-2 border-slate-200 focus:border-blue-500 outline-none py-2 mb-8 bg-transparent font-mono" placeholder="••••">
-                <div class="flex gap-3">
-                    <button onclick="closeModal('admin-auth-modal')" class="flex-1 py-3 bg-slate-100 rounded-xl font-bold">ยกเลิก</button>
-                    <button onclick="verifyAdminPin()" class="flex-1 py-3 bg-slate-800 text-white rounded-xl font-bold shadow-lg">ยืนยัน</button>
-                </div>
-            </div>
-        </div>
-
         <!-- 5. MAIN APP SCREEN -->
         <div id="main-app" class="hidden">
-            <header class="bg-white/90 backdrop-blur-md px-4 py-3 sticky top-0 shadow-sm flex justify-between items-center z-20">
+            <header class="bg-white/80 backdrop-blur-xl px-5 py-4 sticky top-0 shadow-sm flex justify-between items-center z-20 border-b border-slate-100">
                 <div class="flex items-center gap-3">
-                    <div class="bg-blue-700 w-10 h-10 rounded-xl flex items-center justify-center text-white font-bold shadow-md">V</div>
+                    <div class="bg-gradient-to-br from-blue-600 to-indigo-800 w-10 h-10 rounded-xl flex items-center justify-center text-white font-bold shadow-md shadow-blue-500/20">V</div>
                     <div>
-                        <h1 class="font-bold text-slate-800">Volvo Finance</h1>
+                        <h1 class="font-bold text-slate-800 leading-tight">Volvo Finance</h1>
                         <div id="current-user-display" class="text-xs text-slate-500 font-medium"></div>
                     </div>
                 </div>
-                <button onclick="logout()" class="p-2 bg-slate-100 rounded-full text-slate-500 hover:bg-slate-200"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg></button>
+                <button onclick="logout()" class="p-2.5 bg-slate-50 rounded-xl text-slate-400 hover:bg-slate-100 hover:text-slate-600 transition-colors">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+                </button>
             </header>
 
-            <main class="p-4 space-y-6 max-w-md mx-auto">
-                <!-- Balance Card -->
-                <div class="bg-gradient-to-br from-slate-800 to-slate-900 text-white p-6 rounded-[2rem] shadow-2xl relative overflow-hidden">
+            <main class="p-4 space-y-6 max-w-md mx-auto animate-enter">
+                <!-- Balance Card with Chart -->
+                <div class="relative bg-slate-900 text-white p-6 rounded-[2.5rem] shadow-2xl overflow-hidden group transition-all hover:shadow-blue-900/20">
+                    <!-- Dynamic Background -->
+                    <div class="absolute inset-0 bg-gradient-to-br from-slate-800 via-slate-900 to-blue-950"></div>
+                    <div class="absolute right-0 top-0 w-64 h-64 bg-blue-500/10 rounded-full blur-3xl -mr-16 -mt-16"></div>
+                    <div class="absolute left-0 bottom-0 w-48 h-48 bg-indigo-500/10 rounded-full blur-3xl -ml-10 -mb-10"></div>
+                    
+                    <!-- Content -->
                     <div class="relative z-10">
-                        <div class="flex items-center gap-2 text-slate-400 text-xs font-bold tracking-wider mb-4">SERVICE FUND</div>
-                        <div id="balance-display" class="text-5xl font-bold tracking-tight">฿0.00</div>
-                        <div class="text-slate-400 text-xs mt-2">ยอดเงินคงเหลือปัจจุบัน</div>
+                        <div class="flex items-center justify-between mb-6">
+                            <div class="flex items-center gap-2 text-blue-200/80 text-xs font-bold tracking-widest bg-white/5 px-3 py-1 rounded-full backdrop-blur-md border border-white/5">
+                                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
+                                SERVICE FUND
+                            </div>
+                            <svg class="text-slate-600" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 22V4a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v18M6 12H4a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h2M18 9h2a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2h-2M10 6h4M10 10h4M10 14h4M10 18h4"/></svg>
+                        </div>
+                        
+                        <div class="flex items-baseline gap-1">
+                            <div id="balance-display" class="text-5xl font-bold tracking-tight text-white drop-shadow-sm">฿0.00</div>
+                        </div>
+                        <div class="text-slate-400 text-sm mt-1 font-medium">ยอดเงินคงเหลือปัจจุบัน</div>
                     </div>
-                    <div class="absolute right-0 top-0 w-40 h-40 bg-blue-500/20 rounded-full blur-3xl -mr-10 -mt-10"></div>
+
+                    <!-- SVG Chart Area -->
+                    <div class="absolute bottom-0 left-0 right-0 h-24 pointer-events-none opacity-40">
+                        <svg id="balance-chart" width="100%" height="100%" preserveAspectRatio="none" class="chart-line">
+                            <!-- Path will be injected via JS -->
+                        </svg>
+                    </div>
                 </div>
 
                 <!-- Action Buttons -->
                 <div class="grid grid-cols-2 gap-4">
-                    <button onclick="openModal('request-modal')" class="glass-card p-5 rounded-2xl flex items-center gap-4 btn-press">
-                        <div class="bg-blue-50 text-blue-600 w-12 h-12 rounded-2xl flex items-center justify-center shadow-sm"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/></svg></div>
-                        <div class="text-left"><div class="font-bold text-slate-800">เบิกเงิน</div><div class="text-xs text-slate-500">Request</div></div>
+                    <button onclick="openModal('request-modal')" class="glass-card p-5 rounded-[2rem] flex flex-col items-center justify-center gap-2 hover:bg-white transition-all btn-press border-0 group">
+                        <div class="w-14 h-14 bg-blue-50 text-blue-600 rounded-full flex items-center justify-center shadow-inner group-hover:bg-blue-600 group-hover:text-white transition-colors">
+                            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                        </div>
+                        <span class="font-bold text-slate-700">เบิกเงิน</span>
                     </button>
-                    <button id="btn-deposit" onclick="openModal('deposit-modal')" class="glass-card p-5 rounded-2xl flex items-center gap-4 btn-press hidden">
-                        <div class="bg-emerald-50 text-emerald-600 w-12 h-12 rounded-2xl flex items-center justify-center shadow-sm"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg></div>
-                        <div class="text-left"><div class="font-bold text-slate-800">เติมเงิน</div><div class="text-xs text-slate-500">Deposit</div></div>
+                    
+                    <button id="btn-deposit" onclick="openModal('deposit-modal')" class="glass-card p-5 rounded-[2rem] flex flex-col items-center justify-center gap-2 hover:bg-white transition-all btn-press border-0 group hidden">
+                        <div class="w-14 h-14 bg-emerald-50 text-emerald-600 rounded-full flex items-center justify-center shadow-inner group-hover:bg-emerald-600 group-hover:text-white transition-colors">
+                            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                        </div>
+                        <span class="font-bold text-slate-700">เติมเงิน</span>
                     </button>
                 </div>
 
-                <!-- Manager Tools -->
+                <!-- Manager Tools (Hidden by default) -->
                 <div id="manager-tools" class="hidden grid grid-cols-2 gap-4">
-                    <button onclick="switchTab('approvals')" class="bg-amber-50 border border-amber-200 p-4 rounded-2xl flex justify-between items-center text-amber-800 btn-press">
+                    <button onclick="switchTab('approvals')" class="bg-gradient-to-r from-amber-50 to-orange-50 border border-amber-100 p-4 rounded-[1.5rem] flex justify-between items-center text-amber-900 shadow-sm btn-press">
                         <span class="font-bold text-sm">รออนุมัติ</span>
-                        <span id="pending-count" class="bg-amber-500 text-white text-xs px-2 py-0.5 rounded-full hidden">0</span>
+                        <span id="pending-count" class="bg-amber-500 text-white text-xs px-2 py-0.5 rounded-full shadow-sm hidden">0</span>
                     </button>
-                    <button onclick="openModal('manage-modal')" class="glass-card p-4 rounded-2xl flex justify-between items-center text-slate-700 btn-press">
+                    <button onclick="openModal('manage-modal')" class="glass-card p-4 rounded-[1.5rem] flex justify-between items-center text-slate-600 btn-press hover:bg-white">
                         <span class="font-bold text-sm">จัดการคน</span>
-                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
                     </button>
                 </div>
 
                 <!-- Income Breakdown -->
-                <div id="income-breakdown" class="glass-card rounded-[2rem] p-5 hidden">
-                    <h3 class="font-bold text-slate-700 mb-4 flex items-center gap-2"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-indigo-500"><path d="M21.21 15.89A10 10 0 1 1 8 2.83"/><path d="M22 12A10 10 0 0 0 12 2v10z"/></svg> สรุปแหล่งเงิน</h3>
-                    <div id="breakdown-list" class="space-y-3"></div>
+                <div id="income-breakdown" class="glass-card rounded-[2rem] p-5 hidden animate-enter">
+                    <h3 class="font-bold text-slate-700 mb-4 flex items-center gap-2">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="text-indigo-500"><path d="M21.21 15.89A10 10 0 1 1 8 2.83"/><path d="M22 12A10 10 0 0 0 12 2v10z"/></svg> 
+                        ที่มาของเงิน
+                    </h3>
+                    <div id="breakdown-list" class="space-y-4"></div>
                 </div>
 
                 <!-- Lists Container -->
-                <div class="glass-card rounded-[2rem] overflow-hidden">
-                    <div class="bg-white/50 p-4 border-b border-slate-100 flex justify-between items-center">
-                        <h3 id="list-title" class="font-bold text-slate-700 flex items-center gap-2">รายการล่าสุด</h3>
-                        <div id="tab-controls" class="flex gap-2">
-                            <button onclick="switchTab('dashboard')" class="text-xs px-3 py-1 rounded-full bg-blue-100 text-blue-700">ภาพรวม</button>
-                            <button onclick="switchTab('myRequests')" class="text-xs px-3 py-1 rounded-full bg-slate-100 text-slate-600">ประวัติฉัน</button>
+                <div class="glass-card rounded-[2.5rem] overflow-hidden border border-white/60 shadow-lg">
+                    <div class="bg-white/60 p-5 border-b border-slate-100 backdrop-blur-md">
+                        <div class="flex justify-between items-center mb-4">
+                            <h3 id="list-title" class="font-bold text-xl text-slate-800 flex items-center gap-2">รายการล่าสุด</h3>
+                        </div>
+                        
+                        <!-- Filter Chips -->
+                        <div id="filter-chips" class="flex gap-2 overflow-x-auto pb-1 no-scrollbar">
+                            <button onclick="switchTab('dashboard')" class="px-4 py-1.5 rounded-full text-xs font-bold bg-blue-600 text-white shadow-md transition-all whitespace-nowrap" id="tab-all">ภาพรวม</button>
+                            <button onclick="switchTab('myRequests')" class="px-4 py-1.5 rounded-full text-xs font-bold bg-white text-slate-500 border border-slate-200 hover:bg-slate-50 transition-all whitespace-nowrap" id="tab-mine">ประวัติฉัน</button>
                         </div>
                     </div>
-                    <div id="main-list" class="divide-y divide-slate-100 max-h-96 overflow-y-auto">
+                    
+                    <div id="main-list" class="divide-y divide-slate-50 max-h-[400px] overflow-y-auto bg-white/40">
                         <!-- Items injected here -->
                     </div>
                 </div>
             </main>
         </div>
 
-        <!-- MODALS (Hidden by default) -->
-        <!-- Request Modal -->
-        <div id="request-modal" class="hidden fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4">
-            <div class="bg-white p-6 rounded-3xl w-full max-w-sm shadow-2xl modal-enter">
-                <h3 class="font-bold text-xl mb-4">ขอเบิกเงิน</h3>
-                <input id="req-desc" class="w-full border p-4 rounded-xl mb-3 bg-slate-50" placeholder="รายการค่าใช้จ่าย">
-                <input id="req-amount" type="number" class="w-full border p-4 rounded-xl mb-6 bg-slate-50 text-lg" placeholder="จำนวนเงิน">
-                <div class="flex gap-3">
-                    <button onclick="closeModal('request-modal')" class="flex-1 py-3 bg-slate-100 rounded-xl font-bold">ยกเลิก</button>
-                    <button onclick="submitRequest()" class="flex-1 py-3 bg-blue-600 text-white rounded-xl font-bold shadow-lg">ส่งคำขอ</button>
-                </div>
-            </div>
-        </div>
-
-        <!-- Deposit Modal -->
-        <div id="deposit-modal" class="hidden fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4">
-            <div class="bg-white p-6 rounded-3xl w-full max-w-sm shadow-2xl modal-enter">
-                <h3 class="font-bold text-xl mb-4">เติมเงิน</h3>
-                <select id="dep-cat" class="w-full border p-4 rounded-xl mb-3 bg-slate-50">
-                    <option value="scrap">♻️ ขายของเก่า/รีไซเคิล</option>
-                    <option value="contribution">🤝 เงินสมทบ/บริจาค</option>
-                    <option value="fine">⚠️ ค่าปรับ</option>
-                    <option value="activity">🎉 กิจกรรมพิเศษ</option>
-                    <option value="other">📦 อื่นๆ</option>
-                </select>
-                <input id="dep-desc" class="w-full border p-4 rounded-xl mb-3 bg-slate-50" placeholder="รายละเอียดเพิ่มเติม">
-                <input id="dep-amount" type="number" class="w-full border p-4 rounded-xl mb-6 bg-slate-50 text-lg" placeholder="จำนวนเงิน">
-                <div class="flex gap-3">
-                    <button onclick="closeModal('deposit-modal')" class="flex-1 py-3 bg-slate-100 rounded-xl font-bold">ยกเลิก</button>
-                    <button onclick="submitDeposit()" class="flex-1 py-3 bg-emerald-600 text-white rounded-xl font-bold shadow-lg">ยืนยัน</button>
-                </div>
-            </div>
-        </div>
-
-        <!-- Register Modal -->
-        <div id="register-modal" class="hidden fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4">
-            <div class="bg-white p-6 rounded-3xl w-full max-w-sm shadow-2xl modal-enter">
-                <h3 class="font-bold text-xl mb-4">สมัครสมาชิกใหม่</h3>
-                <input id="reg-name" class="w-full border p-4 rounded-xl mb-3 bg-slate-50" placeholder="ชื่อเล่น">
-                <div class="flex gap-2 mb-3">
-                    <button onclick="setRegRole('staff')" id="role-staff" class="flex-1 py-2 border rounded-xl bg-blue-50 border-blue-500 text-blue-700 font-bold">พนักงาน</button>
-                    <button onclick="setRegRole('manager')" id="role-manager" class="flex-1 py-2 border rounded-xl text-slate-500">ผู้จัดการ</button>
-                </div>
-                <input id="reg-pin" class="w-full border p-4 rounded-xl mb-6 bg-slate-50 text-center text-lg tracking-widest" placeholder="ตั้งรหัส PIN 4 หลัก" maxlength="4">
-                <div class="flex gap-3">
-                    <button onclick="closeModal('register-modal')" class="flex-1 py-3 bg-slate-100 rounded-xl font-bold">ยกเลิก</button>
-                    <button onclick="submitRegister()" class="flex-1 py-3 bg-blue-600 text-white rounded-xl font-bold shadow-lg">ยืนยัน</button>
-                </div>
-            </div>
-        </div>
-
-        <!-- Manage User Modal -->
-        <div id="manage-modal" class="hidden fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4">
-            <div class="bg-white p-6 rounded-3xl w-full max-w-sm shadow-2xl h-[80vh] flex flex-col modal-enter">
-                <div class="flex justify-between items-center mb-4 border-b pb-2">
-                    <h3 class="font-bold text-lg">จัดการพนักงาน</h3>
-                    <button onclick="closeModal('manage-modal')">✕</button>
-                </div>
-                <div id="manage-list" class="flex-1 overflow-y-auto space-y-3"></div>
-            </div>
+        <!-- ================= MODALS (Hidden) ================= -->
+        
+        <!-- Generic Modal Structure -->
+        <div id="modal-overlay" class="hidden fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-end sm:items-center justify-center p-4 transition-opacity duration-300">
+            <!-- Modal Content Injected Here -->
         </div>
 
     </div>
 
+    <!-- MAIN SCRIPT -->
     <script>
-        // ==========================================
-        // 🟢 ตั้งค่า: วางรหัส Config ที่นี่ (ถ้ามี)
-        // ==========================================
+        // --- CONFIGURATION ---
         const HARDCODED_CONFIG ={apiKey:"AIzaSyAmm8CJj4yU6Qclr1_l8yVwcQptOtnh0rE",authDomain:"volvo-finance.firebaseapp.com",projectId:"volvo-finance",storageBucket:"volvofinance.firebasestorage.app",messagingSenderId:"713687952336",appId:"1:713687952336:web:00b6a228b36098cf5fe7d5",measurementId:"G-HFEWYL8GZ9"}; 
 
-        // --- GLOBAL VARIABLES ---
+        // --- GLOBAL STATE ---
         let db, auth;
         let currentUser = null;
-        let selectedUser = null; // For PIN login
-        let currentRegRole = 'staff';
+        let selectedUser = null; 
         let appData = { users: [], transactions: [], requests: [] };
         let currentTab = 'dashboard';
         const appId = 'volvo-finance';
 
-        // --- INIT ---
+        // --- INITIALIZATION ---
         window.onload = function() {
             const savedConfig = localStorage.getItem('vfs_config');
             const config = HARDCODED_CONFIG || (savedConfig ? JSON.parse(savedConfig) : null);
@@ -249,7 +263,7 @@
             if (config) {
                 initFirebase(config);
             } else {
-                showScreen('config-screen');
+                renderConfigScreen();
             }
         };
 
@@ -261,16 +275,15 @@
                 
                 auth.onAuthStateChanged(user => {
                     if (user) {
-                        console.log("Connected");
                         startListening();
                     } else {
-                        auth.signInAnonymously().catch(e => alert("Auth Error: " + e.message));
+                        auth.signInAnonymously().catch(e => showToast("Auth Error: " + e.message, 'error'));
                     }
                 });
             } catch (e) {
-                alert("Config Error: " + e.message);
+                showToast("Config Error: " + e.message, 'error');
                 localStorage.removeItem('vfs_config');
-                window.location.reload();
+                renderConfigScreen();
             }
         }
 
@@ -289,86 +302,85 @@
             }
         }
 
-        // --- DATA LISTENING ---
+        // --- DATA SYNC ---
         function startListening() {
-            // Listen Users
-            db.collection('artifacts').doc(appId).collection('public').doc('data').collection('users')
-                .onSnapshot(snap => {
-                    appData.users = snap.docs.map(d => ({id: d.id, ...d.data()}));
-                    renderLoginScreen();
-                    // Update Manage List if open
-                    if(!document.getElementById('manage-modal').classList.contains('hidden')) {
-                        renderManageList();
-                    }
-                    if(currentUser) renderApp();
-                });
+            const publicRef = db.collection('artifacts').doc(appId).collection('public').doc('data');
 
-            // Listen Transactions
-            db.collection('artifacts').doc(appId).collection('public').doc('data').collection('transactions')
-                .orderBy('createdAt', 'desc').limit(50)
-                .onSnapshot(snap => {
-                    appData.transactions = snap.docs.map(d => ({id: d.id, ...d.data()}));
-                    if(currentUser) renderApp();
-                });
+            publicRef.collection('users').onSnapshot(snap => {
+                appData.users = snap.docs.map(d => ({id: d.id, ...d.data()}));
+                if(!currentUser) renderLoginScreen();
+                if(document.getElementById('manage-list')) renderManageList(); // Live update manage list
+            });
 
-            // Listen Requests
-            db.collection('artifacts').doc(appId).collection('public').doc('data').collection('requests')
-                .orderBy('createdAt', 'desc').limit(50)
-                .onSnapshot(snap => {
-                    appData.requests = snap.docs.map(d => ({id: d.id, ...d.data()}));
-                    if(currentUser) renderApp();
-                });
+            publicRef.collection('transactions').orderBy('createdAt', 'desc').limit(50).onSnapshot(snap => {
+                appData.transactions = snap.docs.map(d => ({id: d.id, ...d.data()}));
+                if(currentUser) renderApp();
+            });
+
+            publicRef.collection('requests').orderBy('createdAt', 'desc').limit(50).onSnapshot(snap => {
+                appData.requests = snap.docs.map(d => ({id: d.id, ...d.data()}));
+                if(currentUser) renderApp();
+            });
             
-            showScreen('login-screen');
+            // Initial View
+            document.getElementById('loading-screen').classList.add('hidden');
+            document.getElementById('login-screen').classList.remove('hidden');
         }
 
-        // --- RENDER FUNCTIONS ---
-        function showScreen(id) {
-            ['loading-screen', 'config-screen', 'login-screen', 'main-app'].forEach(s => document.getElementById(s).classList.add('hidden'));
-            document.getElementById(id).classList.remove('hidden');
+        // --- RENDERERS ---
+        
+        function renderConfigScreen() {
+            document.getElementById('loading-screen').classList.add('hidden');
+            document.getElementById('config-screen').classList.remove('hidden');
         }
 
         function renderLoginScreen() {
             const grid = document.getElementById('user-grid');
             grid.innerHTML = '';
             
-            // Add Active Users
             appData.users.filter(u => u.status === 'active').forEach(u => {
-                const btn = document.createElement('button');
-                btn.className = 'bg-white p-4 rounded-xl shadow-sm border hover:border-blue-500 flex flex-col items-center transition-all btn-press';
-                btn.onclick = () => openPinModal(u);
-                btn.innerHTML = `
-                    <div class="w-14 h-14 bg-slate-100 rounded-full flex items-center justify-center font-bold text-xl text-slate-600 mb-2">${u.name[0]}</div>
-                    <div class="font-bold text-slate-800">${u.name}</div>
-                    <div class="text-xs text-slate-400 uppercase">${u.role}</div>
+                const isManager = u.role === 'manager';
+                const el = document.createElement('div');
+                el.className = `glass-card p-5 rounded-2xl flex flex-col items-center justify-center cursor-pointer hover:bg-white transition-all btn-press border-2 ${isManager ? 'border-indigo-100' : 'border-transparent'}`;
+                el.onclick = () => openPinModal(u);
+                el.innerHTML = `
+                    <div class="w-14 h-14 rounded-full flex items-center justify-center font-bold text-xl mb-2 shadow-inner ${isManager ? 'bg-indigo-50 text-indigo-600' : 'bg-slate-100 text-slate-600'}">
+                        ${u.name[0]}
+                    </div>
+                    <div class="font-bold text-slate-800 text-lg">${u.name}</div>
+                    <div class="text-xs text-slate-400 uppercase font-bold tracking-wider">${u.role}</div>
                 `;
-                grid.appendChild(btn);
+                grid.appendChild(el);
             });
 
-            // Add Register Button
-            const regBtn = document.createElement('button');
-            regBtn.className = 'bg-white/50 border-2 border-dashed border-slate-300 p-4 rounded-xl flex flex-col items-center justify-center text-slate-400 hover:bg-white hover:text-blue-600 transition-all btn-press';
-            regBtn.onclick = () => openModal('register-modal');
-            regBtn.innerHTML = `<span class="text-3xl mb-1">+</span><span class="text-sm font-bold">สมัครใหม่</span>`;
+            const regBtn = document.createElement('div');
+            regBtn.className = 'border-2 border-dashed border-slate-300 p-5 rounded-2xl flex flex-col items-center justify-center cursor-pointer hover:bg-white/50 hover:border-blue-400 transition-all btn-press text-slate-400 hover:text-blue-500';
+            regBtn.onclick = () => renderModal('register');
+            regBtn.innerHTML = `
+                <div class="w-12 h-12 rounded-full bg-slate-50 flex items-center justify-center mb-2"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg></div>
+                <div class="font-bold text-sm">สมัครใหม่</div>
+            `;
             grid.appendChild(regBtn);
         }
 
         function renderApp() {
             if(!currentUser) return;
+            document.getElementById('login-screen').classList.add('hidden');
+            document.getElementById('main-app').classList.remove('hidden');
             
-            // Header
-            document.getElementById('current-user-display').innerText = `${currentUser.name} (${currentUser.role})`;
+            // 1. Profile Info
+            document.getElementById('current-user-display').innerHTML = `${currentUser.name} <span class="bg-slate-100 px-1.5 rounded text-[10px] uppercase text-slate-500 border border-slate-200">${currentUser.role}</span>`;
             
-            // Balance
+            // 2. Balance & Chart
             const balance = appData.transactions.reduce((acc, t) => t.type === 'income' ? acc + t.amount : acc - t.amount, 0);
             document.getElementById('balance-display').innerText = new Intl.NumberFormat('th-TH', {style:'currency', currency:'THB'}).format(balance);
+            drawChart(appData.transactions);
 
-            // Conditional UI
+            // 3. Manager Controls
             const isManager = currentUser.role === 'manager';
             document.getElementById('btn-deposit').classList.toggle('hidden', !isManager);
             document.getElementById('manager-tools').classList.toggle('hidden', !isManager);
 
-            // Pending Counts
             const pendingReqs = appData.requests.filter(r => r.status === 'pending');
             const pendingUsers = appData.users.filter(u => u.status === 'pending');
             const pCount = document.getElementById('pending-count');
@@ -379,170 +391,293 @@
                 pCount.classList.add('hidden');
             }
 
-            // List Content
-            const listContainer = document.getElementById('main-list');
-            listContainer.innerHTML = '';
+            // 4. List Rendering based on Tab
+            const list = document.getElementById('main-list');
+            list.innerHTML = '';
             
             let items = [];
-            if (currentTab === 'dashboard') {
-                document.getElementById('list-title').innerHTML = 'รายการล่าสุด';
+            document.getElementById('income-breakdown').classList.add('hidden');
+            document.getElementById('tab-all').className = "px-4 py-1.5 rounded-full text-xs font-bold bg-white text-slate-500 border border-slate-200 transition-all";
+            document.getElementById('tab-mine').className = "px-4 py-1.5 rounded-full text-xs font-bold bg-white text-slate-500 border border-slate-200 transition-all";
+
+            if(currentTab === 'dashboard') {
+                document.getElementById('list-title').innerText = 'รายการล่าสุด';
                 document.getElementById('income-breakdown').classList.remove('hidden');
+                document.getElementById('tab-all').className = "px-4 py-1.5 rounded-full text-xs font-bold bg-blue-600 text-white shadow-md transition-all";
                 items = appData.transactions;
                 renderBreakdown();
-            } else if (currentTab === 'approvals') {
-                document.getElementById('list-title').innerHTML = 'รออนุมัติ';
-                document.getElementById('income-breakdown').classList.add('hidden');
-                items = pendingReqs;
-            } else {
-                document.getElementById('list-title').innerHTML = 'ประวัติของฉัน';
-                document.getElementById('income-breakdown').classList.add('hidden');
+            } else if(currentTab === 'myRequests') {
+                document.getElementById('list-title').innerText = 'ประวัติของฉัน';
+                document.getElementById('tab-mine').className = "px-4 py-1.5 rounded-full text-xs font-bold bg-blue-600 text-white shadow-md transition-all";
                 items = appData.requests.filter(r => r.requesterId === currentUser.id);
+            } else if(currentTab === 'approvals') {
+                document.getElementById('list-title').innerText = 'รายการรออนุมัติ';
+                items = pendingReqs;
             }
 
             if(items.length === 0) {
-                listContainer.innerHTML = `<div class="p-8 text-center text-slate-400">ไม่มีข้อมูล</div>`;
+                list.innerHTML = `<div class="p-8 text-center text-slate-400 text-sm">ไม่มีข้อมูลในส่วนนี้</div>`;
             } else {
                 items.forEach(item => {
-                    const div = document.createElement('div');
-                    div.className = 'p-4 flex justify-between items-center hover:bg-slate-50 transition-colors';
+                    const el = document.createElement('div');
+                    el.className = 'p-4 flex justify-between items-center hover:bg-blue-50/50 transition-colors animate-enter';
                     
-                    if (currentTab === 'approvals') { // Approval View
-                        div.className = 'p-4 bg-amber-50 border-b border-amber-100';
-                        div.innerHTML = `
+                    if(currentTab === 'approvals') {
+                        // Approval Card Style
+                        el.className = 'p-5 bg-amber-50/60 border-b border-amber-100 last:border-0';
+                        el.innerHTML = `
                             <div class="w-full">
                                 <div class="flex justify-between mb-2">
-                                    <div><div class="font-bold text-slate-800">${item.description}</div><div class="text-xs text-slate-500">โดย ${item.requester}</div></div>
-                                    <div class="font-bold text-lg">${formatMoney(item.amount)}</div>
+                                    <div>
+                                        <div class="font-bold text-slate-800 text-lg">${item.description}</div>
+                                        <div class="text-xs text-slate-500 bg-white px-2 py-0.5 rounded-md inline-block shadow-sm">ขอโดย ${item.requester}</div>
+                                    </div>
+                                    <div class="font-bold text-xl text-slate-800">${formatMoney(item.amount)}</div>
                                 </div>
-                                <div class="flex gap-2 mt-2">
-                                    <button onclick="processReq('${item.id}', 'approved')" class="flex-1 bg-emerald-500 text-white py-2 rounded-lg text-sm font-bold shadow-sm">อนุมัติ</button>
-                                    <button onclick="processReq('${item.id}', 'rejected')" class="flex-1 bg-white border text-slate-600 py-2 rounded-lg text-sm font-bold">ปฏิเสธ</button>
+                                <div class="flex gap-2 mt-3">
+                                    <button onclick="processReq('${item.id}', 'approved')" class="flex-1 bg-emerald-500 text-white py-2 rounded-xl text-sm font-bold shadow-md shadow-emerald-500/20 active:scale-95 transition-transform">อนุมัติ</button>
+                                    <button onclick="processReq('${item.id}', 'rejected')" class="flex-1 bg-white border border-slate-200 text-slate-600 py-2 rounded-xl text-sm font-bold active:scale-95 transition-transform">ปฏิเสธ</button>
                                 </div>
                             </div>
                         `;
-                    } else { // Normal View
+                    } else {
+                        // Standard List Style
                         const isIncome = item.type === 'income';
-                        const color = isIncome ? 'text-emerald-600' : 'text-slate-800';
-                        const iconBg = isIncome ? 'bg-emerald-100' : 'bg-slate-100';
-                        // Handle pending/rejected status display for My History
+                        const icon = isIncome ? 
+                            `<svg class="text-emerald-600" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>` : 
+                            `<svg class="text-rose-500" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 18 13.5 8.5 8.5 13.5 1 6"/><polyline points="17 18 23 18 23 12"/></svg>`;
+                        
                         let statusBadge = '';
                         if(item.status) {
-                            const badgeColor = item.status === 'pending' ? 'bg-amber-100 text-amber-700' : item.status === 'approved' ? 'bg-emerald-100 text-emerald-700' : 'bg-rose-100 text-rose-700';
-                            statusBadge = `<span class="text-[10px] px-2 py-0.5 rounded ${badgeColor} ml-2 uppercase">${item.status}</span>`;
+                            const colors = { pending: 'bg-amber-100 text-amber-700', approved: 'bg-emerald-100 text-emerald-700', rejected: 'bg-rose-100 text-rose-700' };
+                            statusBadge = `<span class="text-[9px] px-1.5 py-0.5 rounded ${colors[item.status]} uppercase font-bold ml-2 tracking-wider">${item.status}</span>`;
                         }
 
-                        div.innerHTML = `
-                            <div class="flex items-center gap-3">
-                                <div class="w-10 h-10 rounded-xl flex items-center justify-center ${iconBg}">
-                                    ${isIncome ? '+' : '-'}
+                        el.innerHTML = `
+                            <div class="flex items-center gap-4">
+                                <div class="w-12 h-12 rounded-2xl flex items-center justify-center shadow-sm ${isIncome ? 'bg-emerald-50' : 'bg-rose-50'}">
+                                    ${icon}
                                 </div>
                                 <div>
-                                    <div class="font-bold text-sm text-slate-800 flex items-center">${item.description} ${statusBadge}</div>
-                                    <div class="text-xs text-slate-400">${item.performer || item.requester} • ${new Date(item.createdAt?.seconds*1000).toLocaleDateString('th-TH')}</div>
+                                    <div class="font-bold text-slate-800 text-sm flex items-center">${item.description} ${statusBadge}</div>
+                                    <div class="text-xs text-slate-400 mt-0.5 font-medium">${item.performer || item.requester} • ${new Date(item.createdAt?.seconds*1000).toLocaleDateString('th-TH', {day:'numeric', month:'short'})}</div>
                                 </div>
                             </div>
-                            <div class="font-bold ${color}">${isIncome ? '+' : '-'}${formatMoney(item.amount)}</div>
+                            <div class="font-bold text-base ${isIncome ? 'text-emerald-600' : 'text-slate-800'}">
+                                ${isIncome ? '+' : '-'}${formatMoney(item.amount)}
+                            </div>
                         `;
                     }
-                    listContainer.appendChild(div);
+                    list.appendChild(el);
                 });
             }
         }
 
-        function renderBreakdown() {
-            const breakdown = {};
-            appData.transactions.forEach(t => {
-                if(t.type === 'income') {
-                    const cat = t.category || 'other';
-                    breakdown[cat] = (breakdown[cat] || 0) + t.amount;
-                }
+        // --- FEATURE FUNCTIONS ---
+
+        function drawChart(txs) {
+            // Simple logic to create a trend line SVG path based on running balance
+            if(txs.length < 2) return;
+            const sorted = [...txs].reverse(); // Oldest first
+            let running = 0;
+            const points = sorted.map((t, i) => {
+                running += (t.type === 'income' ? t.amount : -t.amount);
+                return running;
             });
-            const totalIncome = Object.values(breakdown).reduce((a,b)=>a+b, 0);
+            
+            const min = Math.min(...points);
+            const max = Math.max(...points);
+            const range = max - min || 1;
+            const width = 100; // viewbox units
+            const height = 100;
+            
+            const pathData = points.map((val, i) => {
+                const x = (i / (points.length - 1)) * width;
+                const y = height - ((val - min) / range) * height; // Invert Y
+                return `${x},${y}`;
+            }).join(' ');
+
+            document.getElementById('balance-chart').innerHTML = `<polyline points="${pathData}" class="chart-line" />`;
+        }
+
+        function renderBreakdown() {
             const container = document.getElementById('breakdown-list');
             container.innerHTML = '';
             
-            const cats = [
-                {id: 'scrap', label: 'รีไซเคิล', icon: '♻️'},
-                {id: 'contribution', label: 'เงินสมทบ', icon: '🤝'},
-                {id: 'fine', label: 'ค่าปรับ', icon: '⚠️'},
-                {id: 'activity', label: 'กิจกรรม', icon: '🎉'},
-                {id: 'other', label: 'อื่นๆ', icon: '📦'}
-            ];
+            const summary = { scrap: 0, contribution: 0, fine: 0, activity: 0, other: 0 };
+            let totalIncome = 0;
+            
+            appData.transactions.forEach(t => {
+                if(t.type === 'income') {
+                    const cat = t.category || 'other';
+                    summary[cat] = (summary[cat] || 0) + t.amount;
+                    totalIncome += t.amount;
+                }
+            });
 
             if(totalIncome === 0) {
-                container.innerHTML = '<div class="text-xs text-slate-400 text-center">ยังไม่มีรายรับ</div>';
+                container.innerHTML = '<div class="text-xs text-slate-400 text-center py-2">ยังไม่มีข้อมูลรายรับ</div>';
                 return;
             }
 
-            cats.forEach(c => {
-                const amt = breakdown[c.id] || 0;
-                if(amt > 0) {
-                    const pct = ((amt/totalIncome)*100).toFixed(0);
+            const labels = {
+                scrap: {l:'รีไซเคิล', i:'♻️', c:'bg-orange-500'},
+                contribution: {l:'เงินสมทบ', i:'🤝', c:'bg-indigo-500'},
+                fine: {l:'ค่าปรับ', i:'⚠️', c:'bg-rose-500'},
+                activity: {l:'กิจกรรม', i:'🎉', c:'bg-purple-500'},
+                other: {l:'อื่นๆ', i:'📦', c:'bg-slate-500'}
+            };
+
+            Object.entries(summary).sort((a,b) => b[1] - a[1]).forEach(([key, val]) => {
+                if(val > 0) {
+                    const meta = labels[key] || labels.other;
+                    const percent = ((val/totalIncome)*100).toFixed(0);
+                    
                     container.innerHTML += `
-                        <div class="flex justify-between items-center text-sm">
-                            <div class="flex items-center gap-2"><span class="bg-white p-1 rounded-md shadow-sm">${c.icon}</span> <span>${c.label}</span></div>
-                            <div class="flex gap-3"><span class="font-bold">${formatMoney(amt)}</span> <span class="text-slate-400 text-xs w-8 text-right">${pct}%</span></div>
+                        <div>
+                            <div class="flex justify-between text-sm mb-1">
+                                <span class="font-bold text-slate-700 flex items-center gap-2"><span class="bg-white px-1 rounded shadow-sm text-xs">${meta.i}</span> ${meta.l}</span>
+                                <span class="text-slate-500 font-medium">${formatMoney(val)} <span class="text-xs opacity-50 ml-1">(${percent}%)</span></span>
+                            </div>
+                            <div class="w-full bg-slate-100 rounded-full h-2 overflow-hidden">
+                                <div class="${meta.c} h-full rounded-full" style="width: ${percent}%"></div>
+                            </div>
                         </div>
-                        <div class="w-full bg-slate-200 h-1.5 rounded-full overflow-hidden mb-2"><div class="bg-indigo-500 h-full" style="width:${pct}%"></div></div>
                     `;
                 }
             });
         }
 
-        function renderManageList() {
-            const container = document.getElementById('manage-list');
-            container.innerHTML = '';
-            
-            // Current User ID (null if in Admin Mode)
-            const currentUserId = currentUser ? currentUser.id : null;
-
-            appData.users.forEach(u => {
-                const div = document.createElement('div');
-                div.className = 'flex items-center justify-between p-3 border rounded-xl bg-slate-50';
-                
-                // Show "approve" button if pending
-                let actionBtn = '';
-                if(u.status === 'pending') {
-                    actionBtn = `<button onclick="updateUserStatus('${u.id}', 'active')" class="p-2 bg-emerald-100 text-emerald-600 rounded-lg hover:bg-emerald-200"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></button>`;
-                }
-                
-                // Show "delete" button if not self
-                let deleteBtn = '';
-                if(u.id !== currentUserId) {
-                    deleteBtn = `<button onclick="deleteUser('${u.id}')" class="p-2 bg-white border border-rose-200 text-rose-500 rounded-lg hover:bg-rose-50 ml-1"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></button>`;
-                }
-
-                div.innerHTML = `
-                    <div class="flex items-center gap-3">
-                        <div class="w-10 h-10 bg-white rounded-full flex items-center justify-center font-bold text-slate-500 shadow-sm border">${u.name[0]}</div>
-                        <div>
-                            <div class="font-bold text-slate-800 flex items-center gap-2">
-                                ${u.name} 
-                                ${u.id === currentUserId ? '<span class="text-xs text-blue-600">(ฉัน)</span>' : ''}
-                            </div>
-                            <div class="text-xs text-slate-500 uppercase flex items-center gap-1">
-                                ${u.role} • 
-                                <span class="${u.status === 'pending' ? 'text-amber-500 font-bold' : 'text-emerald-500'}">${u.status}</span>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="flex items-center">
-                        ${actionBtn}
-                        ${deleteBtn}
-                    </div>
-                `;
-                container.appendChild(div);
+        function triggerConfetti() {
+            confetti({
+                particleCount: 100,
+                spread: 70,
+                origin: { y: 0.6 },
+                colors: ['#059669', '#3b82f6', '#fbbf24']
             });
         }
 
-        // --- ACTIONS ---
+        function showToast(msg, type='success') {
+            const container = document.getElementById('toast-container');
+            const el = document.createElement('div');
+            const bg = type === 'success' ? 'bg-slate-800' : 'bg-rose-600';
+            const icon = type === 'success' ? '✅' : '⚠️';
+            
+            el.className = `${bg} text-white px-4 py-3 rounded-xl shadow-2xl flex items-center gap-3 text-sm font-medium toast-enter backdrop-blur-md`;
+            el.innerHTML = `<span>${icon}</span> <span>${msg}</span>`;
+            
+            container.appendChild(el);
+            setTimeout(() => {
+                el.style.opacity = '0';
+                el.style.transform = 'translateY(20px)';
+                el.style.transition = 'all 0.3s ease';
+                setTimeout(() => el.remove(), 300);
+            }, 3000);
+        }
+
+        // --- MODAL & LOGIC HANDLERS ---
+
+        function renderModal(type) {
+            const overlay = document.getElementById('modal-overlay');
+            overlay.classList.remove('hidden');
+            overlay.innerHTML = ''; // Clear previous
+
+            let content = '';
+            
+            if(type === 'register') {
+                content = `
+                    <div class="bg-white p-6 rounded-[2rem] w-full max-w-sm shadow-2xl modal-enter">
+                        <h3 class="font-bold text-xl mb-4 text-slate-800">สมัครสมาชิกใหม่</h3>
+                        <input id="m-name" class="w-full p-4 bg-slate-50 rounded-xl border border-slate-200 mb-3 outline-none focus:ring-2 focus:ring-blue-500" placeholder="ชื่อเล่น (Nickname)">
+                        <div class="flex gap-2 mb-4">
+                            <button onclick="currentRegRole='staff'; this.nextElementSibling.classList.replace('bg-blue-600','bg-slate-100'); this.nextElementSibling.classList.replace('text-white','text-slate-500'); this.classList.replace('bg-slate-100','bg-blue-600'); this.classList.replace('text-slate-500','text-white');" class="flex-1 py-3 rounded-xl bg-blue-600 text-white font-bold transition-all">พนักงาน</button>
+                            <button onclick="currentRegRole='manager'; this.previousElementSibling.classList.replace('bg-blue-600','bg-slate-100'); this.previousElementSibling.classList.replace('text-white','text-slate-500'); this.classList.replace('bg-slate-100','bg-blue-600'); this.classList.replace('text-slate-500','text-white');" class="flex-1 py-3 rounded-xl bg-slate-100 text-slate-500 font-bold transition-all">ผู้จัดการ</button>
+                        </div>
+                        <input id="m-pin" type="tel" maxlength="4" class="w-full p-4 bg-slate-50 rounded-xl border border-slate-200 mb-6 text-center text-2xl tracking-[0.5em] outline-none focus:ring-2 focus:ring-blue-500" placeholder="••••">
+                        <div class="flex gap-3">
+                            <button onclick="closeModal()" class="flex-1 py-3 bg-slate-100 rounded-xl font-bold text-slate-600">ยกเลิก</button>
+                            <button onclick="submitRegister()" class="flex-1 py-3 bg-blue-600 text-white rounded-xl font-bold shadow-lg shadow-blue-500/30">ยืนยัน</button>
+                        </div>
+                    </div>
+                `;
+            } else if (type === 'adminAuth') {
+                content = `
+                    <div class="bg-white p-8 rounded-[2rem] w-full max-w-xs text-center shadow-2xl modal-enter">
+                        <div class="w-16 h-16 bg-slate-100 text-slate-500 rounded-full flex items-center justify-center mx-auto mb-4"><svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg></div>
+                        <h3 class="font-bold text-xl mb-1">โหมดผู้ดูแล</h3>
+                        <p class="text-xs text-slate-400 mb-6">ใส่รหัสลับผู้จัดการ (2121)</p>
+                        <input id="m-pin" type="tel" maxlength="4" class="w-full p-3 bg-slate-50 border-b-2 border-slate-200 text-center text-4xl tracking-[0.5em] outline-none focus:border-slate-800 mb-8 font-mono" placeholder="••••" autoFocus>
+                        <div class="flex gap-3">
+                            <button onclick="closeModal()" class="flex-1 py-3 bg-slate-100 rounded-xl font-bold text-slate-600">ยกเลิก</button>
+                            <button onclick="if(document.getElementById('m-pin').value==='2121'){closeModal();renderManageModal();}else{showToast('รหัสผิด','error')}" class="flex-1 py-3 bg-slate-800 text-white rounded-xl font-bold shadow-lg">ยืนยัน</button>
+                        </div>
+                    </div>
+                `;
+            }
+
+            overlay.innerHTML = content;
+        }
+
+        function renderManageModal() {
+            const overlay = document.getElementById('modal-overlay');
+            overlay.classList.remove('hidden');
+            
+            // Build user list HTML
+            let userListHTML = '';
+            appData.users.forEach(u => {
+                userListHTML += `
+                    <div class="flex items-center justify-between p-3 border border-slate-100 rounded-2xl bg-white mb-2">
+                        <div class="flex items-center gap-3">
+                            <div class="w-10 h-10 bg-slate-100 rounded-full flex items-center justify-center font-bold text-slate-500">${u.name[0]}</div>
+                            <div>
+                                <div class="font-bold text-slate-800">${u.name}</div>
+                                <div class="text-[10px] uppercase font-bold text-slate-400 tracking-wide">${u.role} • <span class="${u.status==='active'?'text-emerald-500':'text-amber-500'}">${u.status}</span></div>
+                            </div>
+                        </div>
+                        <div class="flex gap-2">
+                            ${u.status === 'pending' ? `<button onclick="updateUserStatus('${u.id}', 'active')" class="w-8 h-8 bg-emerald-100 text-emerald-600 rounded-lg flex items-center justify-center">✓</button>` : ''}
+                            <button onclick="deleteUser('${u.id}')" class="w-8 h-8 bg-white border border-rose-100 text-rose-500 rounded-lg flex items-center justify-center hover:bg-rose-50">🗑</button>
+                        </div>
+                    </div>
+                `;
+            });
+
+            overlay.innerHTML = `
+                <div class="bg-white p-6 rounded-[2rem] w-full max-w-sm shadow-2xl h-[70vh] flex flex-col modal-enter">
+                    <div class="flex justify-between items-center mb-4 pb-2 border-b border-slate-100">
+                        <h3 class="font-bold text-xl text-slate-800">จัดการพนักงาน</h3>
+                        <button onclick="closeModal()" class="w-8 h-8 bg-slate-100 rounded-full flex items-center justify-center text-slate-500">✕</button>
+                    </div>
+                    <div class="flex-1 overflow-y-auto">${userListHTML}</div>
+                </div>
+            `;
+        }
+
+        // Reusing same modal logic for Request/Deposit to keep file small
+        function openModal(id) {
+            // For simple static modals defined in HTML
+            if(document.getElementById(id)) {
+                document.getElementById(id).classList.remove('hidden');
+            } else {
+                renderModal(id.replace('-modal', '')); // For dynamic ones
+            }
+        }
+        
+        function closeModal(id) {
+            if(id) {
+                document.getElementById(id).classList.add('hidden');
+            } else {
+                document.getElementById('modal-overlay').classList.add('hidden');
+            }
+        }
+
         function openPinModal(u) {
             selectedUser = u;
             document.getElementById('pin-user-name').innerText = u.name;
             document.getElementById('pin-user-avatar').innerText = u.name[0];
             document.getElementById('pin-input').value = '';
-            openModal('pin-modal');
-            document.getElementById('pin-input').focus();
+            document.getElementById('pin-modal').classList.remove('hidden');
+            setTimeout(() => document.getElementById('pin-input').focus(), 100);
         }
 
         function verifyPin() {
@@ -550,30 +685,12 @@
             if(pin === selectedUser.pin) {
                 currentUser = selectedUser;
                 closeModal('pin-modal');
-                showScreen('main-app');
                 renderApp();
+                showToast(`ยินดีต้อนรับคุณ ${currentUser.name}`);
             } else {
-                alert("รหัส PIN ไม่ถูกต้อง");
+                showToast("รหัส PIN ไม่ถูกต้อง", "error");
                 document.getElementById('pin-input').value = '';
             }
-        }
-
-        function verifyAdminPin() {
-            const pin = document.getElementById('admin-pin-input').value;
-            if(pin === '2121') {
-                closeModal('admin-auth-modal');
-                // Open manage modal directly
-                openModal('manage-modal');
-                renderManageList();
-            } else {
-                alert("รหัสผู้จัดการไม่ถูกต้อง (Default: 2121)");
-                document.getElementById('admin-pin-input').value = '';
-            }
-        }
-
-        function logout() {
-            currentUser = null;
-            showScreen('login-screen');
         }
 
         function switchTab(tab) {
@@ -581,34 +698,36 @@
             renderApp();
         }
 
-        function setRegRole(role) {
-            currentRegRole = role;
-            document.getElementById('role-staff').className = role === 'staff' ? 'flex-1 py-2 border rounded-xl bg-blue-50 border-blue-500 text-blue-700 font-bold' : 'flex-1 py-2 border rounded-xl text-slate-500';
-            document.getElementById('role-manager').className = role === 'manager' ? 'flex-1 py-2 border rounded-xl bg-blue-50 border-blue-500 text-blue-700 font-bold' : 'flex-1 py-2 border rounded-xl text-slate-500';
+        function logout() {
+            currentUser = null;
+            document.getElementById('main-app').classList.add('hidden');
+            document.getElementById('login-screen').classList.remove('hidden');
         }
 
+        // --- ASYNC ACTIONS ---
+
         async function submitRegister() {
-            const name = document.getElementById('reg-name').value;
-            const pin = document.getElementById('reg-pin').value;
-            if(!name || pin.length < 4) return alert("กรุณากรอกข้อมูลให้ครบถ้วน");
+            const name = document.getElementById('m-name').value;
+            const pin = document.getElementById('m-pin').value;
+            if(!name || pin.length < 4) return showToast("กรอกข้อมูลให้ครบ", "error");
             
             try {
                 await db.collection('artifacts').doc(appId).collection('public').doc('data').collection('users').add({
                     name, role: currentRegRole, pin, status: 'pending', createdAt: firebase.firestore.FieldValue.serverTimestamp()
                 });
-                alert("ส่งคำขอแล้ว กรุณารอผู้จัดการอนุมัติ");
-                closeModal('register-modal');
-            } catch(e) { alert("Error: " + e.message); }
+                showToast("ส่งคำขอแล้ว รออนุมัติ");
+                closeModal();
+            } catch(e) { showToast(e.message, 'error'); }
         }
 
         async function restoreAdmin() {
-            if(!confirm('ยืนยันสร้าง User: เพิร์ธ (Manager) รหัส 2121?')) return;
+            if(!confirm('สร้าง User: เพิร์ธ (Manager) รหัส 2121?')) return;
             try {
                 await db.collection('artifacts').doc(appId).collection('public').doc('data').collection('users').add({
                     name: 'เพิร์ธ', role: 'manager', pin: '2121', status: 'active', createdAt: firebase.firestore.FieldValue.serverTimestamp()
                 });
-                alert("สร้างสำเร็จ!");
-            } catch(e) { alert("Error: " + e.message); }
+                showToast("สร้าง Admin สำเร็จ!");
+            } catch(e) { showToast(e.message, 'error'); }
         }
 
         async function submitRequest() {
@@ -620,6 +739,7 @@
                 description: desc, amount: parseFloat(amount), requester: currentUser.name, requesterId: currentUser.id, status: 'pending', createdAt: firebase.firestore.FieldValue.serverTimestamp(), type: 'expense'
             });
             closeModal('request-modal');
+            showToast("ส่งคำขอเบิกแล้ว");
         }
 
         async function submitDeposit() {
@@ -632,6 +752,8 @@
                 description: desc || 'เงินเติม', amount: parseFloat(amount), category: cat, performer: currentUser.name, type: 'income', createdAt: firebase.firestore.FieldValue.serverTimestamp()
             });
             closeModal('deposit-modal');
+            triggerConfetti();
+            showToast("เติมเงินสำเร็จ! 🎉");
         }
 
         async function processReq(id, status) {
@@ -640,22 +762,29 @@
                 await db.collection('artifacts').doc(appId).collection('public').doc('data').collection('transactions').add({
                     description: req.description, amount: parseFloat(req.amount), performer: req.requester, approver: currentUser.name, type: 'expense', createdAt: firebase.firestore.FieldValue.serverTimestamp()
                 });
+                triggerConfetti();
+                showToast("อนุมัติรายการแล้ว");
+            } else {
+                showToast("ปฏิเสธรายการแล้ว");
             }
             await db.collection('artifacts').doc(appId).collection('public').doc('data').collection('requests').doc(id).update({status});
         }
 
         async function updateUserStatus(id, status) {
             await db.collection('artifacts').doc(appId).collection('public').doc('data').collection('users').doc(id).update({status});
+            showToast("อัปเดตสถานะแล้ว");
+            if(document.getElementById('modal-overlay').classList.contains('hidden') === false) renderManageModal(); // Refresh list
         }
 
         async function deleteUser(id) {
-            if(confirm("ลบผู้ใช้นี้?")) await db.collection('artifacts').doc(appId).collection('public').doc('data').collection('users').doc(id).delete();
+            if(confirm("ยืนยันลบผู้ใช้นี้?")) {
+                await db.collection('artifacts').doc(appId).collection('public').doc('data').collection('users').doc(id).delete();
+                showToast("ลบผู้ใช้แล้ว");
+                if(document.getElementById('modal-overlay').classList.contains('hidden') === false) renderManageModal(); // Refresh list
+            }
         }
 
-        // --- UTILS ---
         function formatMoney(n) { return new Intl.NumberFormat('th-TH', {style:'currency', currency:'THB'}).format(n); }
-        function openModal(id) { document.getElementById(id).classList.remove('hidden'); }
-        function closeModal(id) { document.getElementById(id).classList.add('hidden'); }
     </script>
 </body>
 </html>
