@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Volvo Finance Service (Final Fix)</title>
+    <title>Volvo Finance Service</title>
     
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -77,10 +77,9 @@
 
     <script type="text/babel">
         // ==========================================
-        // 🟢 ส่วนตั้งค่า: หากต้องการฝังรหัส ให้แทนที่ null ด้วย Object Config
-        // ตัวอย่าง: const FIREBASE_CONFIG = { apiKey: "...", authDomain: "..." };
+        // 🟢 พื้นที่สำหรับฝัง Config (ระบบจะแทนที่ตรงนี้อัตโนมัติเมื่อกด Download)
         // ==========================================
-        const firebaseConfig = {apiKey:"AIzaSyAmm8CJj4yU6Qclr1_l8yVwcQptOtnh0rE",authDomain:"volvo-finance.firebaseapp.com",projectId:"volvo-finance",storageBucket:"volvo-finance.firebasestorage.app",messagingSenderId:"713687952336",appId:"1:713687952336:web:00b6a228b36098cf5fe7d5",measurementId:"G-HFEWYL8GZ9"};  
+        const FIREBASE_CONFIG = null; // CONFIG_PLACEHOLDER
         
         if (!window.React || !window.ReactDOM || !window.firebase) {
             throw new Error("กำลังโหลดเครื่องมือ... หากค้างหน้านี้นานเกินไป กรุณาตรวจสอบอินเทอร์เน็ต");
@@ -106,12 +105,7 @@
                 check: <polyline points="20 6 9 17 4 12" />,
                 pieChart: <path d="M21.21 15.89A10 10 0 1 1 8 2.83M22 12A10 10 0 0 0 12 2v10z" />,
                 tag: <path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82zM7 7h.01" />,
-                history: <g><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" /><path d="M3 3v5h5" /><path d="M12 7v5l4 2" /></g>,
-                trendingUp: <g><polyline points="23 6 13.5 15.5 8.5 10.5 1 18" /><polyline points="17 6 23 6 23 12" /></g>,
-                trendingDown: <g><polyline points="23 18 13.5 8.5 8.5 13.5 1 6" /><polyline points="17 18 23 18 23 12" /></g>,
-                clock: <g><circle cx="12" cy="12" r="10" /><polyline points="12 6 12 12 16 14" /></g>,
-                userPlus: <g><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" /><circle cx="8.5" cy="7" r="4" /><line x1="20" y1="8" x2="20" y2="14" /><line x1="23" y1="11" x2="17" y2="11" /></g>,
-                creditCard: <g><rect x="1" y="4" width="22" height="16" rx="2" ry="2" /><line x1="1" y1="10" x2="23" y2="10" /></g>
+                download: <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3" />
             };
             return (
                 <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
@@ -120,22 +114,60 @@
             );
         };
 
-        // --- Config Screen ---
+        // --- Config Screen with Export Feature ---
         const ConfigScreen = ({ onSave }) => {
             const [input, setInput] = useState('');
             const [err, setErr] = useState('');
 
-            const save = () => {
+            const parseConfig = (text) => {
+                let clean = text.trim().replace(/^(const|var|let)\s+firebaseConfig\s*=\s*/, '').replace(/;$/, '');
+                let json;
+                try { json = JSON.parse(clean); } 
+                catch { json = new Function('return ' + clean)(); }
+                if (!json || !json.apiKey) throw new Error("ไม่พบค่า apiKey");
+                return json;
+            };
+
+            const saveLocal = () => {
                 try {
-                    let clean = input.trim().replace(/^(const|var|let)\s+firebaseConfig\s*=\s*/, '').replace(/;$/, '');
-                    let json;
-                    try { json = JSON.parse(clean); } 
-                    catch { json = new Function('return ' + clean)(); }
-                    
-                    if (!json || !json.apiKey) throw new Error("ไม่พบ apiKey");
+                    const json = parseConfig(input);
                     onSave(json);
                 } catch (e) {
-                    setErr('รูปแบบไม่ถูกต้อง');
+                    setErr('รูปแบบโค้ดไม่ถูกต้อง กรุณาก๊อปปี้มาใหม่');
+                }
+            };
+
+            const downloadShareableFile = () => {
+                try {
+                    const json = parseConfig(input);
+                    // Get current HTML source
+                    let source = document.documentElement.outerHTML;
+                    // Inject the config
+                    const configString = JSON.stringify(json, null, 2);
+                    const placeholder = "const FIREBASE_CONFIG = null; // CONFIG_PLACEHOLDER";
+                    
+                    if (source.includes(placeholder)) {
+                        source = source.replace(placeholder, `const FIREBASE_CONFIG = ${configString};`);
+                        
+                        // Create download
+                        const blob = new Blob([source], { type: 'text/html' });
+                        const url = URL.createObjectURL(blob);
+                        const a = document.createElement('a');
+                        a.href = url;
+                        a.download = 'VolvoFinance_App.html';
+                        document.body.appendChild(a);
+                        a.click();
+                        document.body.removeChild(a);
+                        
+                        alert("✅ สร้างไฟล์สำเร็จ!\n\nกรุณาส่งไฟล์ 'VolvoFinance_App.html' นี้ให้พนักงานใช้งานได้เลยครับ (ไม่ต้องกรอกรหัสอีก)");
+                        
+                        // Also save locally for current user
+                        onSave(json);
+                    } else {
+                        setErr('ไม่พบจุดวาง Config ในไฟล์ต้นฉบับ (ลองโหลดไฟล์ใหม่)');
+                    }
+                } catch (e) {
+                    setErr('เกิดข้อผิดพลาดในการสร้างไฟล์: ' + e.message);
                 }
             };
 
@@ -146,8 +178,19 @@
                         <textarea className="w-full h-40 p-3 border rounded-xl mb-4 text-xs font-mono bg-white/50" 
                             placeholder='วางโค้ด firebaseConfig ที่นี่...' 
                             value={input} onChange={e=>setInput(e.target.value)}></textarea>
-                        {err && <div className="text-red-500 text-xs mb-2">{err}</div>}
-                        <button onClick={save} className="w-full bg-blue-600 text-white py-3 rounded-xl hover:bg-blue-700 shadow-lg font-bold">บันทึก</button>
+                        {err && <div className="text-red-500 text-xs mb-2 text-center">{err}</div>}
+                        
+                        <div className="flex flex-col gap-3">
+                            <button onClick={downloadShareableFile} className="w-full bg-emerald-600 text-white py-3 rounded-xl hover:bg-emerald-700 shadow-lg font-bold flex items-center justify-center gap-2">
+                                <Icon name="download" /> สร้างไฟล์สำหรับส่งให้พนักงาน (แนะนำ)
+                            </button>
+                            <button onClick={saveLocal} className="w-full bg-slate-200 text-slate-700 py-3 rounded-xl hover:bg-slate-300 font-bold">
+                                บันทึกเฉพาะเครื่องนี้
+                            </button>
+                        </div>
+                        <p className="text-xs text-center text-slate-500 mt-4 opacity-80">
+                            * ปุ่มสีเขียวจะสร้างไฟล์ใหม่ที่ฝังรหัสไว้แล้ว สามารถส่งต่อได้ทันที
+                        </p>
                     </div>
                 </div>
             );
@@ -184,9 +227,7 @@
             const [selectedProfile, setSelectedProfile] = useState(null);
             const [depositCategory, setDepositCategory] = useState('scrap');
 
-            // --- Corrected Hook Order: Always declare all hooks at the top ---
-            
-            // Income Breakdown Calculation (Moved up to be unconditional)
+            // Income Breakdown Calculation
             const incomeBreakdown = useMemo(() => {
                 const summary = {};
                 INCOME_CATEGORIES.forEach(cat => summary[cat.id] = 0);
@@ -203,7 +244,7 @@
                 })).sort((a,b) => b.total - a.total);
             }, [transactions]);
 
-            // Balance Calculation (Moved up)
+            // Balance Calculation
             const balance = useMemo(() => {
                 return transactions.reduce((acc, t) => t.type === 'income' ? acc + t.amount : acc - t.amount, 0);
             }, [transactions]);
@@ -249,7 +290,6 @@
                 return () => { unsubUsers(); unsubTx(); unsubReq(); };
             }, [user, init]);
 
-            // --- Render Logic (Conditional returns happen AFTER all hooks) ---
             if (!config) return <ConfigScreen onSave={c => { localStorage.setItem('vfs_firebase_config', JSON.stringify(c)); setConfig(c); }} />;
             if (!init) return <div className="loading">กำลังเชื่อมต่อระบบ...</div>;
 
