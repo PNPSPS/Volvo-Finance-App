@@ -92,6 +92,11 @@
     </style>
 </head>
 <body>
+    <div id="error-display"></div>
+    
+    <!-- ป้องกัน React Error ในโหมดทดสอบ -->
+    <div id="root" style="display: none;"></div> 
+
     <div id="app-container">
         <div id="toast-container" class="fixed bottom-6 left-0 right-0 z-[100] flex flex-col items-center gap-2 pointer-events-none px-4"></div>
 
@@ -105,12 +110,12 @@
         <div id="config-screen" class="hidden min-h-screen flex flex-col items-center justify-center p-6">
             <div class="bg-white/95 backdrop-blur-xl p-8 rounded-[2rem] shadow-2xl w-full max-w-md border border-white">
                 <div class="text-center mb-6">
-                    <h2 class="text-xl font-bold text-slate-800">ตั้งค่าระบบ</h2>
-                    <p class="text-sm text-slate-500 mt-2">กรอกข้อมูลเพื่อเริ่มต้นใช้งาน</p>
+                    <h2 class="text-xl font-bold text-slate-800">ตั้งค่าระบบ (ครั้งแรก)</h2>
+                    <p class="text-sm text-slate-500 mt-2">กรอกข้อมูลเพื่อเริ่มต้นใช้งานในเครื่องนี้</p>
                 </div>
                 
                 <label class="text-xs font-bold text-slate-500 ml-2 mb-1 block">1. Firebase Config (จำเป็น)</label>
-                <textarea id="config-input" class="w-full h-24 p-3 border border-slate-200 rounded-xl mb-4 text-xs font-mono bg-slate-50 focus:ring-2 focus:ring-blue-500 outline-none" placeholder='const firebaseConfig = { ... }'></textarea>
+                <textarea id="config-input" class="w-full h-24 p-3 border border-slate-200 rounded-xl mb-4 text-xs font-mono bg-slate-50 focus:ring-2 focus:ring-blue-500 outline-none" placeholder='นำโค้ด { apiKey: "..." } มาวางที่นี่'></textarea>
                 
                 <label class="text-xs font-bold text-slate-500 ml-2 mb-1 block">2. LINE Notify Token (ตัวเลือก)</label>
                 <input id="line-token-input" class="w-full p-3 border border-slate-200 rounded-xl mb-6 text-sm bg-slate-50 focus:ring-2 focus:ring-green-500 outline-none" placeholder="Ex. uvX9... (เว้นว่างได้)">
@@ -241,7 +246,16 @@
 
     <!-- MAIN SCRIPT -->
     <script>
-        const firebaseConfig = {apiKey:"AIzaSyAmm8CJj4yU6Qclr1_l8yVwcQptOtnh0rE",authDomain:"volvo-finance.firebaseapp.com",projectId:"volvo-finance",storageBucket:"volvo-finance.firebasestorage.app",messagingSenderId:"713687952336",appId:"1:713687952336:web:00b6a228b36098cf5fe7d5",measurementId:"G-HFEWYL8GZ9"}; 
+        // 🟢 ฝังรหัส Firebase Config ของคุณเพิร์ธลงในโค้ดโดยตรง
+        const HARDCODED_CONFIG = {
+            apiKey: "AIzaSyAmm8CJj4yU6Qclr1_l8yVwcQptOtnh0rE",
+            authDomain: "volvo-finance.firebaseapp.com",
+            projectId: "volvo-finance",
+            storageBucket: "volvo-finance.firebasestorage.app",
+            messagingSenderId: "713687952336",
+            appId: "1:713687952336:web:00b6a228b36098cf5fe7d5",
+            measurementId: "G-HFEWYL8GZ9"
+        };
 
         // --- GLOBAL STATE ---
         let db, auth;
@@ -255,20 +269,47 @@
         let lineToken = '';
 
         // --- INITIALIZATION ---
+        // ใช้ setTimeout เพื่อให้แน่ใจว่าหน้าเว็บโหลดเสร็จสมบูรณ์จริงๆ
         window.onload = function() {
-            const savedConfig = localStorage.getItem('vfs_config');
-            lineToken = localStorage.getItem('vfs_line_token') || '';
-            const config = HARDCODED_CONFIG || (savedConfig ? JSON.parse(savedConfig) : null);
+            setTimeout(() => {
+                const savedConfig = localStorage.getItem('vfs_config');
+                lineToken = localStorage.getItem('vfs_line_token') || '';
+                
+                let config = null;
+                try {
+                    if (typeof HARDCODED_CONFIG !== 'undefined' && HARDCODED_CONFIG) {
+                        config = HARDCODED_CONFIG;
+                    } else if (savedConfig) {
+                        config = JSON.parse(savedConfig);
+                    }
+                } catch(e) { console.error("Config Parse Error:", e); }
 
-            if (config) {
-                initFirebase(config);
-            } else {
-                renderConfigScreen();
+                if (config && config.apiKey) {
+                    initFirebase(config);
+                } else {
+                    renderConfigScreen();
+                }
+            }, 100);
+        };
+
+        window.onerror = function(message, source, lineno, colno, error) {
+            const errDisplay = document.getElementById('error-display');
+            if (errDisplay) {
+                errDisplay.innerHTML = `
+                    <div style="padding: 20px; background: #fee2e2; color: #b91c1c; border: 1px solid #fca5a5; margin: 20px; border-radius: 8px; font-family: sans-serif;">
+                        <h3 style="font-weight:bold; margin-bottom:10px;">⚠️ เกิดข้อผิดพลาด (System Error)</h3>
+                        <p style="font-size:12px; margin-bottom:15px;"><b>Message:</b> ${message}</p>
+                        <p style="font-size:12px;">หากคุณเผลอพิมพ์ภาษาไทยลงในโค้ด ให้โหลดไฟล์ใหม่และตั้งค่าผ่านหน้าจอแอปแทนนะครับ</p>
+                        <button onclick="localStorage.clear(); window.location.reload();" style="margin-top:15px; padding:8px 16px; border-radius:8px; cursor:pointer; background:white; border:1px solid #b91c1c; font-weight:bold;">ล้างค่าและรีโหลด</button>
+                    </div>
+                `;
             }
+            return true;
         };
 
         function initFirebase(config) {
             try {
+                if (!window.firebase) throw new Error("Firebase library not loaded.");
                 if (!firebase.apps.length) firebase.initializeApp(config);
                 auth = firebase.auth();
                 db = firebase.firestore();
@@ -293,14 +334,17 @@
             try {
                 let clean = input.replace(/^(const|var|let)\s+firebaseConfig\s*=\s*/, '').replace(/;$/, '');
                 const json = new Function('return ' + clean)();
-                if(!json.apiKey) throw new Error("Invalid Config");
+                if(!json || !json.apiKey) throw new Error("Invalid Config Format");
                 
                 localStorage.setItem('vfs_config', JSON.stringify(json));
                 if(token) localStorage.setItem('vfs_line_token', token);
                 window.location.reload();
             } catch (e) {
-                document.getElementById('config-error').innerText = "รูปแบบไม่ถูกต้อง (ต้องเป็น Object JSON)";
-                document.getElementById('config-error').classList.remove('hidden');
+                const errDiv = document.getElementById('config-error');
+                if (errDiv) {
+                    errDiv.innerText = "รูปแบบไม่ถูกต้อง (ต้องเป็น { apiKey: '...' } เท่านั้น)";
+                    errDiv.classList.remove('hidden');
+                }
             }
         }
 
@@ -335,20 +379,25 @@
                 if(currentUser) renderApp();
             });
             
-            document.getElementById('loading-screen').classList.add('hidden');
-            document.getElementById('login-screen').classList.remove('hidden');
+            document.getElementById('loading-screen')?.classList.add('hidden');
+            document.getElementById('login-screen')?.classList.remove('hidden');
         }
 
         // --- RENDERERS ---
         function renderConfigScreen() {
-            document.getElementById('loading-screen').classList.add('hidden');
-            document.getElementById('config-screen').classList.remove('hidden');
-            if(lineToken) document.getElementById('line-token-input').value = lineToken;
+            document.getElementById('loading-screen')?.classList.add('hidden');
+            document.getElementById('config-screen')?.classList.remove('hidden');
+            if(lineToken) {
+                const ltInput = document.getElementById('line-token-input');
+                if(ltInput) ltInput.value = lineToken;
+            }
         }
 
         function renderLoginScreen() {
             const grid = document.getElementById('user-grid');
+            if (!grid) return;
             grid.innerHTML = '';
+            
             appData.users.filter(u => u.status === 'active').forEach(u => {
                 const isManager = u.role === 'manager';
                 const el = document.createElement('div');
@@ -361,7 +410,7 @@
                 `;
                 grid.appendChild(el);
             });
-            // Register Button
+
             const regBtn = document.createElement('div');
             regBtn.className = 'border-2 border-dashed border-slate-300 p-5 rounded-2xl flex flex-col items-center justify-center cursor-pointer hover:bg-white/50 hover:border-blue-400 transition-all btn-press text-slate-400 hover:text-blue-500';
             regBtn.onclick = () => renderModal('register');
@@ -371,40 +420,44 @@
 
         function renderApp() {
             if(!currentUser) return;
-            document.getElementById('login-screen').classList.add('hidden');
-            document.getElementById('main-app').classList.remove('hidden');
+            document.getElementById('login-screen')?.classList.add('hidden');
+            document.getElementById('main-app')?.classList.remove('hidden');
             document.getElementById('current-user-display').innerHTML = `${currentUser.name} <span class="bg-slate-100 px-1.5 rounded text-[10px] uppercase text-slate-500 border border-slate-200">${currentUser.role}</span>`;
             
             renderAccountSwiper();
             const isManager = currentUser.role === 'manager';
-            document.getElementById('btn-deposit').classList.toggle('hidden', !isManager);
-            document.getElementById('manager-tools').classList.toggle('hidden', !isManager);
+            document.getElementById('btn-deposit')?.classList.toggle('hidden', !isManager);
+            document.getElementById('manager-tools')?.classList.toggle('hidden', !isManager);
 
             const pendingReqs = appData.requests.filter(r => r.status === 'pending');
             const pendingUsers = appData.users.filter(u => u.status === 'pending');
             const pCount = document.getElementById('pending-count');
-            if(pendingReqs.length > 0 || pendingUsers.length > 0) {
-                pCount.innerText = pendingReqs.length + pendingUsers.length;
-                pCount.classList.remove('hidden');
-            } else {
-                pCount.classList.add('hidden');
+            if (pCount) {
+                if(pendingReqs.length > 0 || pendingUsers.length > 0) {
+                    pCount.innerText = pendingReqs.length + pendingUsers.length;
+                    pCount.classList.remove('hidden');
+                } else {
+                    pCount.classList.add('hidden');
+                }
             }
             renderList();
         }
 
         function renderAccountSwiper() {
             const swiper = document.getElementById('account-swiper');
+            if (!swiper) return;
             swiper.innerHTML = '';
+            
             const balances = {};
             appData.transactions.forEach(t => {
                 const accId = t.accountId || 'main';
                 if(!balances[accId]) balances[accId] = 0;
                 balances[accId] += (t.type === 'income' ? t.amount : -t.amount);
             });
-            // Total Card
+            
             const totalBalance = Object.values(balances).reduce((a,b)=>a+b, 0);
             swiper.appendChild(createAccountCard('all', 'ภาพรวม', '📊', 'from-blue-600 to-indigo-800', totalBalance));
-            // Account Cards
+            
             appData.accounts.forEach(acc => {
                 const bal = balances[acc.id] || 0;
                 swiper.appendChild(createAccountCard(acc.id, acc.name, acc.icon, acc.color || 'from-slate-700 to-slate-900', bal));
@@ -443,18 +496,23 @@
 
         function renderList() {
             const list = document.getElementById('main-list');
+            if (!list) return;
             list.innerHTML = '';
-            document.getElementById('tab-all').className = "px-4 py-1.5 rounded-full text-xs font-bold bg-white text-slate-500 border border-slate-200 transition-all";
-            document.getElementById('tab-mine').className = "px-4 py-1.5 rounded-full text-xs font-bold bg-white text-slate-500 border border-slate-200 transition-all";
+            
+            const tabAll = document.getElementById('tab-all');
+            const tabMine = document.getElementById('tab-mine');
+            if (tabAll) tabAll.className = "px-4 py-1.5 rounded-full text-xs font-bold bg-white text-slate-500 border border-slate-200 transition-all";
+            if (tabMine) tabMine.className = "px-4 py-1.5 rounded-full text-xs font-bold bg-white text-slate-500 border border-slate-200 transition-all";
+            
             let items = [];
 
             if(currentTab === 'dashboard') {
                 document.getElementById('list-title').innerText = currentAccountId === 'all' ? 'รายการล่าสุด (ทั้งหมด)' : 'รายการล่าสุด';
-                document.getElementById('tab-all').className = "px-4 py-1.5 rounded-full text-xs font-bold bg-blue-600 text-white shadow-md transition-all";
+                if (tabAll) tabAll.className = "px-4 py-1.5 rounded-full text-xs font-bold bg-blue-600 text-white shadow-md transition-all";
                 items = appData.transactions.filter(t => currentAccountId === 'all' || (t.accountId || 'main') === currentAccountId);
             } else if(currentTab === 'myRequests') {
                 document.getElementById('list-title').innerText = 'ประวัติของฉัน';
-                document.getElementById('tab-mine').className = "px-4 py-1.5 rounded-full text-xs font-bold bg-blue-600 text-white shadow-md transition-all";
+                if (tabMine) tabMine.className = "px-4 py-1.5 rounded-full text-xs font-bold bg-blue-600 text-white shadow-md transition-all";
                 items = appData.requests.filter(r => r.requesterId === currentUser.id);
             } else if(currentTab === 'approvals') {
                 document.getElementById('list-title').innerText = 'รออนุมัติ';
@@ -466,7 +524,6 @@
                 items.forEach(item => {
                     const el = document.createElement('div');
                     if(currentTab === 'approvals') {
-                        // Approval Card
                         el.className = 'p-5 bg-amber-50/60 border-b border-amber-100 last:border-0 animate-enter';
                         const reqAcc = appData.accounts.find(a => a.id === item.accountId) || {name: 'กองกลางหลัก', icon: '🏦'};
                         
@@ -491,7 +548,6 @@
                                 </div>
                             </div>`;
                     } else {
-                        // Transaction Row
                         el.className = 'p-4 flex justify-between items-center hover:bg-blue-50/50 transition-colors animate-enter';
                         const isIncome = item.type === 'income';
                         const icon = isIncome ? `<svg class="text-emerald-600" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>` : `<svg class="text-rose-500" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 18 13.5 8.5 8.5 13.5 1 6"/><polyline points="17 18 23 18 23 12"/></svg>`;
@@ -521,6 +577,7 @@
         // --- MODAL HANDLERS ---
         function renderModal(type, data = null) {
             const overlay = document.getElementById('modal-overlay');
+            if (!overlay) return;
             overlay.classList.remove('hidden');
             overlay.innerHTML = '';
             let content = '';
@@ -598,6 +655,7 @@
 
         function renderManageModal() {
             const overlay = document.getElementById('modal-overlay');
+            if (!overlay) return;
             overlay.classList.remove('hidden');
             let userListHTML = '';
             appData.users.forEach(u => {
@@ -712,7 +770,7 @@
                     performer: req.requester, 
                     approver: currentUser.name, 
                     type: 'expense', 
-                    createdAt: req.createdAt // ใช้วันที่ที่พนักงานระบุตอนขอเบิก
+                    createdAt: req.createdAt
                 });
                 triggerConfetti(); showToast("อนุมัติแล้ว");
                 sendLine(`✅ อนุมัติเบิก: ${req.description} (${formatMoney(req.amount)})\nอนุมัติโดย: ${currentUser.name}`);
