@@ -561,8 +561,10 @@
                                 <div class="w-12 h-12 rounded-2xl flex items-center justify-center shadow-sm ${isIncome ? 'bg-emerald-50' : 'bg-rose-50'}">${icon}</div>
                                 <div>
                                     <div class="font-bold text-slate-800 text-sm flex items-center">${item.description} ${item.status ? `<span class="text-[9px] px-1.5 py-0.5 rounded bg-slate-100 uppercase ml-2 text-slate-500 font-bold">${item.status}</span>` : ''} ${slipBtn}</div>
-                                    <div class="text-xs text-slate-400 mt-0.5 font-medium flex items-center gap-1">
-                                        <span>${txAcc.icon} ${txAcc.name}</span> • ${new Date(item.createdAt?.seconds*1000).toLocaleDateString('th-TH', {day:'numeric', month:'short'})}
+                                    <div class="text-xs text-slate-400 mt-1 font-medium flex items-center gap-2 flex-wrap">
+                                        <span class="bg-slate-100 px-1.5 py-0.5 rounded-md flex items-center gap-1 text-slate-600">${txAcc.icon} ${txAcc.name}</span>
+                                        <span class="flex items-center gap-1 text-blue-600 bg-blue-50 px-1.5 py-0.5 rounded-md"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg> ${item.performer || item.requester || 'ไม่ระบุ'}</span>
+                                        <span class="text-slate-400">${new Date(item.createdAt?.seconds*1000).toLocaleDateString('th-TH', {day:'numeric', month:'short'})}</span>
                                     </div>
                                 </div>
                             </div>
