@@ -79,6 +79,16 @@
             opacity: 0;
             cursor: pointer;
         }
+
+        /* Custom Date Picker Indicator */
+        input[type="date"]::-webkit-calendar-picker-indicator {
+            cursor: pointer;
+            opacity: 0.6;
+            transition: 0.2s;
+        }
+        input[type="date"]::-webkit-calendar-picker-indicator:hover {
+            opacity: 1;
+        }
     </style>
 </head>
 <body>
@@ -194,6 +204,15 @@
                     </button>
                 </div>
 
+                <!-- Income Breakdown -->
+                <div id="income-breakdown" class="glass-card rounded-[2rem] p-5 hidden animate-enter">
+                    <h3 class="font-bold text-slate-700 mb-4 flex items-center gap-2">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="text-indigo-500"><path d="M21.21 15.89A10 10 0 1 1 8 2.83"/><path d="M22 12A10 10 0 0 0 12 2v10z"/></svg> 
+                        ที่มาของเงิน
+                    </h3>
+                    <div id="breakdown-list" class="space-y-4"></div>
+                </div>
+
                 <!-- Lists Container -->
                 <div class="glass-card rounded-[2.5rem] overflow-hidden border border-white/60 shadow-lg mt-6">
                     <div class="bg-white/60 p-5 border-b border-slate-100 backdrop-blur-md">
@@ -213,7 +232,7 @@
         <!-- ================= MODALS ================= -->
         <div id="modal-overlay" class="hidden fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-end sm:items-center justify-center p-4 transition-opacity duration-300"></div>
 
-        <!-- SLIP VIEW MODAL (Standalone to be called easily) -->
+        <!-- SLIP VIEW MODAL -->
         <div id="slip-modal-container" class="hidden fixed inset-0 bg-black/90 z-[60] flex items-center justify-center p-4" onclick="this.classList.add('hidden')">
             <img id="slip-image-view" class="max-w-full max-h-full rounded-xl shadow-2xl" src="" alt="Slip">
             <button class="absolute top-4 right-4 text-white p-2 bg-white/20 rounded-full">✕</button>
@@ -222,7 +241,7 @@
 
     <!-- MAIN SCRIPT -->
     <script>
-        const HARDCODED_CONFIG ={apiKey:"AIzaSyAmm8CJj4yU6Qclr1_l8yVwcQptOtnh0rE",authDomain:"volvo-finance.firebaseapp.com",projectId: "volvo-finance",storageBucket:"volvo-finance.firebasestorage.app",messagingSenderId:"713687952336",appId:"1:713687952336:web:00b6a228b36098cf5fe7d5",measurementId:"G-HFEWYL8GZ9"}; 
+        const HARDCODED_CONFIG = null; // 🟢 ฝังรหัส Firebase ที่นี่
 
         // --- GLOBAL STATE ---
         let db, auth;
@@ -447,21 +466,52 @@
                 items.forEach(item => {
                     const el = document.createElement('div');
                     if(currentTab === 'approvals') {
+                        // Approval Card
                         el.className = 'p-5 bg-amber-50/60 border-b border-amber-100 last:border-0 animate-enter';
+                        const reqAcc = appData.accounts.find(a => a.id === item.accountId) || {name: 'กองกลางหลัก', icon: '🏦'};
+                        
                         el.innerHTML = `
-                            <div class="w-full"><div class="flex justify-between mb-2"><div><div class="font-bold text-slate-800 text-lg">${item.description}</div><div class="text-xs text-slate-500 bg-white px-2 py-0.5 rounded-md inline-block shadow-sm">ขอโดย ${item.requester}</div></div><div class="font-bold text-xl text-slate-800">${formatMoney(item.amount)}</div></div><div class="flex gap-2 mt-3"><button onclick="processReq('${item.id}', 'approved')" class="flex-1 bg-emerald-500 text-white py-2 rounded-xl text-sm font-bold shadow-md shadow-emerald-500/20 active:scale-95 transition-transform">อนุมัติ</button><button onclick="processReq('${item.id}', 'rejected')" class="flex-1 bg-white border border-slate-200 text-slate-600 py-2 rounded-xl text-sm font-bold active:scale-95 transition-transform">ปฏิเสธ</button></div></div>`;
+                            <div class="w-full">
+                                <div class="flex justify-between mb-2">
+                                    <div>
+                                        <div class="font-bold text-slate-800 text-lg">${item.description}</div>
+                                        <div class="flex gap-2 items-center mt-1">
+                                            <div class="text-xs text-slate-500 bg-white px-2 py-0.5 rounded-md inline-block shadow-sm">ขอโดย ${item.requester}</div>
+                                            <div class="text-xs text-blue-600 bg-blue-50 px-2 py-0.5 rounded-md inline-block shadow-sm border border-blue-100">${reqAcc.icon} ${reqAcc.name}</div>
+                                        </div>
+                                    </div>
+                                    <div class="text-right">
+                                        <div class="font-bold text-xl text-slate-800">${formatMoney(item.amount)}</div>
+                                        <div class="text-[10px] text-slate-400 mt-1">${new Date(item.createdAt?.seconds*1000).toLocaleDateString('th-TH', {day:'numeric', month:'short'})}</div>
+                                    </div>
+                                </div>
+                                <div class="flex gap-2 mt-3">
+                                    <button onclick="processReq('${item.id}', 'approved')" class="flex-1 bg-emerald-500 text-white py-2 rounded-xl text-sm font-bold shadow-md shadow-emerald-500/20 active:scale-95 transition-transform">อนุมัติ</button>
+                                    <button onclick="processReq('${item.id}', 'rejected')" class="flex-1 bg-white border border-slate-200 text-slate-600 py-2 rounded-xl text-sm font-bold active:scale-95 transition-transform">ปฏิเสธ</button>
+                                </div>
+                            </div>`;
                     } else {
+                        // Transaction Row
                         el.className = 'p-4 flex justify-between items-center hover:bg-blue-50/50 transition-colors animate-enter';
                         const isIncome = item.type === 'income';
                         const icon = isIncome ? `<svg class="text-emerald-600" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>` : `<svg class="text-rose-500" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 18 13.5 8.5 8.5 13.5 1 6"/><polyline points="17 18 23 18 23 12"/></svg>`;
                         const txAccId = item.accountId || 'main';
                         const txAcc = appData.accounts.find(a => a.id === txAccId) || {name: 'กองกลาง', icon: '🏦'};
                         
-                        // Slip Button if exists
                         const slipBtn = item.slip ? `<button onclick="viewSlip('${item.slip}')" class="text-xs text-blue-500 underline ml-2">ดูสลิป</button>` : '';
 
                         el.innerHTML = `
-                            <div class="flex items-center gap-4"><div class="w-12 h-12 rounded-2xl flex items-center justify-center shadow-sm ${isIncome ? 'bg-emerald-50' : 'bg-rose-50'}">${icon}</div><div><div class="font-bold text-slate-800 text-sm flex items-center">${item.description} ${item.status ? `<span class="text-[9px] px-1.5 py-0.5 rounded bg-slate-100 uppercase ml-2 text-slate-500 font-bold">${item.status}</span>` : ''} ${slipBtn}</div><div class="text-xs text-slate-400 mt-0.5 font-medium flex items-center gap-1"><span>${txAcc.icon} ${txAcc.name}</span> • ${new Date(item.createdAt?.seconds*1000).toLocaleDateString('th-TH', {day:'numeric', month:'short'})}</div></div></div><div class="font-bold text-base ${isIncome ? 'text-emerald-600' : 'text-slate-800'}">${isIncome ? '+' : '-'}${formatMoney(item.amount)}</div>`;
+                            <div class="flex items-center gap-4">
+                                <div class="w-12 h-12 rounded-2xl flex items-center justify-center shadow-sm ${isIncome ? 'bg-emerald-50' : 'bg-rose-50'}">${icon}</div>
+                                <div>
+                                    <div class="font-bold text-slate-800 text-sm flex items-center">${item.description} ${item.status ? `<span class="text-[9px] px-1.5 py-0.5 rounded bg-slate-100 uppercase ml-2 text-slate-500 font-bold">${item.status}</span>` : ''} ${slipBtn}</div>
+                                    <div class="text-xs text-slate-400 mt-0.5 font-medium flex items-center gap-1">
+                                        <span>${txAcc.icon} ${txAcc.name}</span> • ${new Date(item.createdAt?.seconds*1000).toLocaleDateString('th-TH', {day:'numeric', month:'short'})}
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="font-bold text-base ${isIncome ? 'text-emerald-600' : 'text-slate-800'}">${isIncome ? '+' : '-'}${formatMoney(item.amount)}</div>
+                        `;
                     }
                     list.appendChild(el);
                 });
@@ -476,15 +526,41 @@
             let content = '';
 
             const accountOptions = appData.accounts.map(a => `<option value="${a.id}">${a.icon} ${a.name}</option>`).join('');
+            const today = new Date().toISOString().split('T')[0];
 
             if (type === 'pin' && data) {
                 content = `<div class="bg-white p-8 rounded-[2rem] w-full max-w-xs text-center shadow-2xl modal-enter"><div class="w-16 h-16 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center mx-auto mb-4 font-bold text-2xl shadow-inner">${data.name[0]}</div><h3 class="font-bold text-xl mb-1 text-slate-800">ยินดีต้อนรับ</h3><p class="text-slate-500 mb-8 font-medium">คุณ ${data.name}</p><input id="pin-input" type="password" maxlength="6" class="w-full text-center text-4xl tracking-[0.5em] border-b-2 border-slate-200 focus:border-blue-500 outline-none py-2 mb-8 bg-transparent font-mono text-slate-800" placeholder="••••" autoFocus><div class="flex gap-3"><button onclick="closeModal()" class="flex-1 py-3 bg-slate-100 text-slate-600 rounded-xl font-bold">ยกเลิก</button><button onclick="verifyPin('${data.id}')" class="flex-1 py-3 bg-blue-600 text-white rounded-xl font-bold shadow-lg">เข้าสู่ระบบ</button></div></div>`;
             } else if (type === 'request') {
-                content = `<div class="bg-white p-6 rounded-[2rem] w-full max-w-sm shadow-2xl modal-enter"><h3 class="font-bold text-xl mb-6 text-slate-800 flex items-center gap-2">💸 ขอเบิกเงิน</h3><label class="text-xs font-bold text-slate-500 ml-1 mb-1 block">เลือกบัญชีที่จะเบิก</label><select id="req-acc" class="w-full border p-4 rounded-2xl mb-3 bg-slate-50 focus:ring-2 focus:ring-blue-500 outline-none appearance-none">${accountOptions}</select><input id="req-desc" class="w-full border p-4 rounded-2xl mb-3 bg-slate-50 focus:ring-2 focus:ring-blue-500 outline-none" placeholder="รายการค่าใช้จ่าย" autoFocus><input id="req-amount" type="number" class="w-full border p-4 rounded-2xl mb-6 bg-slate-50 focus:ring-2 focus:ring-blue-500 outline-none text-lg font-medium" placeholder="จำนวนเงิน"><div class="flex gap-3"><button onclick="closeModal()" class="flex-1 py-3 bg-slate-100 rounded-xl font-bold">ยกเลิก</button><button onclick="submitRequest()" class="flex-1 py-3 bg-blue-600 text-white rounded-xl font-bold shadow-lg">ส่งคำขอ</button></div></div>`;
+                content = `<div class="bg-white p-6 rounded-[2rem] w-full max-w-sm shadow-2xl modal-enter">
+                    <h3 class="font-bold text-xl mb-6 text-slate-800 flex items-center gap-2"><div class="bg-blue-100 p-2 rounded-xl text-blue-600"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="5" y1="12" x2="19" y2="12"/></svg></div> ขอเบิกเงิน</h3>
+                    <label class="text-xs font-bold text-slate-500 ml-1 mb-1 block">เลือกบัญชีที่จะเบิก</label>
+                    <select id="req-acc" class="w-full border p-4 rounded-2xl mb-3 bg-slate-50 focus:ring-2 focus:ring-blue-500 outline-none appearance-none">${accountOptions}</select>
+                    <label class="text-xs font-bold text-slate-500 ml-1 mb-1 block">วันที่ทำรายการ (เลือกย้อนหลังได้)</label>
+                    <input id="req-date" type="date" class="w-full border p-4 rounded-2xl mb-3 bg-slate-50 focus:ring-2 focus:ring-blue-500 outline-none" value="${today}">
+                    <input id="req-desc" class="w-full border p-4 rounded-2xl mb-3 bg-slate-50 focus:ring-2 focus:ring-blue-500 outline-none" placeholder="รายการค่าใช้จ่าย" autoFocus>
+                    <input id="req-amount" type="number" class="w-full border p-4 rounded-2xl mb-6 bg-slate-50 focus:ring-2 focus:ring-blue-500 outline-none text-lg font-medium" placeholder="จำนวนเงิน">
+                    <div class="flex gap-3"><button onclick="closeModal()" class="flex-1 py-3 bg-slate-100 rounded-xl font-bold">ยกเลิก</button><button onclick="submitRequest()" class="flex-1 py-3 bg-blue-600 text-white rounded-xl font-bold shadow-lg">ส่งคำขอ</button></div></div>`;
             } else if (type === 'deposit') {
-                content = `<div class="bg-white p-6 rounded-[2rem] w-full max-w-sm shadow-2xl modal-enter"><h3 class="font-bold text-xl mb-6 text-slate-800 flex items-center gap-2">💰 เติมเงิน</h3><label class="text-xs font-bold text-slate-500 ml-1 mb-1 block">เลือกบัญชีที่จะเติม</label><select id="dep-acc" class="w-full border p-4 rounded-2xl mb-3 bg-slate-50 focus:ring-2 focus:ring-emerald-500 outline-none appearance-none">${accountOptions}</select><input id="dep-desc" class="w-full border p-4 rounded-2xl mb-3 bg-slate-50 focus:ring-2 focus:ring-emerald-500 outline-none" placeholder="รายละเอียดเพิ่มเติม"><input id="dep-amount" type="number" class="w-full border p-4 rounded-2xl mb-4 bg-slate-50 focus:ring-2 focus:ring-emerald-500 outline-none text-lg font-medium" placeholder="จำนวนเงิน"><div class="file-input-wrapper mb-6"><button class="w-full py-3 bg-slate-100 rounded-xl text-slate-500 text-sm font-bold border border-dashed border-slate-300">📷 แนบสลิป (ถ้ามี)</button><input type="file" id="dep-slip" accept="image/*" onchange="this.previousElementSibling.innerText = '✅ แนบสลิปแล้ว'"></div><div class="flex gap-3"><button onclick="closeModal()" class="flex-1 py-3 bg-slate-100 rounded-xl font-bold">ยกเลิก</button><button onclick="submitDeposit()" class="flex-1 py-3 bg-emerald-600 text-white rounded-xl font-bold shadow-lg">ยืนยัน</button></div></div>`;
+                content = `<div class="bg-white p-6 rounded-[2rem] w-full max-w-sm shadow-2xl modal-enter">
+                    <h3 class="font-bold text-xl mb-6 text-slate-800 flex items-center gap-2"><div class="bg-emerald-100 p-2 rounded-xl text-emerald-600"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg></div> เติมเงิน</h3>
+                    <label class="text-xs font-bold text-slate-500 ml-1 mb-1 block">เลือกบัญชีที่จะเติม</label>
+                    <select id="dep-acc" class="w-full border p-4 rounded-2xl mb-3 bg-slate-50 focus:ring-2 focus:ring-emerald-500 outline-none appearance-none">${accountOptions}</select>
+                    <label class="text-xs font-bold text-slate-500 ml-1 mb-1 block">วันที่ทำรายการ</label>
+                    <input id="dep-date" type="date" class="w-full border p-4 rounded-2xl mb-3 bg-slate-50 focus:ring-2 focus:ring-emerald-500 outline-none" value="${today}">
+                    <select id="dep-cat" class="w-full border p-4 rounded-2xl mb-3 bg-slate-50 focus:ring-2 focus:ring-emerald-500 outline-none appearance-none"><option value="scrap">♻️ ขายของเก่า/รีไซเคิล</option><option value="contribution">🤝 เงินสมทบ/บริจาค</option><option value="fine">⚠️ ค่าปรับ</option><option value="activity">🎉 กิจกรรมพิเศษ</option><option value="other">📦 อื่นๆ</option></select>
+                    <input id="dep-desc" class="w-full border p-4 rounded-2xl mb-3 bg-slate-50 focus:ring-2 focus:ring-emerald-500 outline-none" placeholder="รายละเอียดเพิ่มเติม">
+                    <input id="dep-amount" type="number" class="w-full border p-4 rounded-2xl mb-4 bg-slate-50 focus:ring-2 focus:ring-emerald-500 outline-none text-lg font-medium" placeholder="จำนวนเงิน">
+                    <div class="file-input-wrapper mb-6"><button class="w-full py-3 bg-slate-100 rounded-xl text-slate-500 text-sm font-bold border border-dashed border-slate-300">📷 แนบสลิป (ถ้ามี)</button><input type="file" id="dep-slip" accept="image/*" onchange="this.previousElementSibling.innerText = '✅ แนบสลิปแล้ว'"></div>
+                    <div class="flex gap-3"><button onclick="closeModal()" class="flex-1 py-3 bg-slate-100 rounded-xl font-bold">ยกเลิก</button><button onclick="submitDeposit()" class="flex-1 py-3 bg-emerald-600 text-white rounded-xl font-bold shadow-lg">ยืนยัน</button></div></div>`;
             } else if (type === 'transfer') {
-                 content = `<div class="bg-white p-6 rounded-[2rem] w-full max-w-sm shadow-2xl modal-enter"><h3 class="font-bold text-xl mb-6 text-slate-800 flex items-center gap-2">↔️ โยกย้ายเงิน</h3><div class="grid grid-cols-2 gap-4 mb-3"><div><label class="text-xs font-bold text-slate-500 block mb-1">จาก</label><select id="tr-from" class="w-full border p-3 rounded-xl bg-slate-50 text-sm">${accountOptions}</select></div><div><label class="text-xs font-bold text-slate-500 block mb-1">ไปที่</label><select id="tr-to" class="w-full border p-3 rounded-xl bg-slate-50 text-sm">${accountOptions}</select></div></div><input id="tr-desc" class="w-full border p-4 rounded-2xl mb-3 bg-slate-50 focus:ring-2 focus:ring-indigo-500 outline-none" placeholder="เหตุผลการย้าย"><input id="tr-amount" type="number" class="w-full border p-4 rounded-2xl mb-6 bg-slate-50 focus:ring-2 focus:ring-indigo-500 outline-none text-lg font-medium" placeholder="จำนวนเงิน"><div class="flex gap-3"><button onclick="closeModal()" class="flex-1 py-3 bg-slate-100 rounded-xl font-bold">ยกเลิก</button><button onclick="submitTransfer()" class="flex-1 py-3 bg-indigo-600 text-white rounded-xl font-bold shadow-lg">ยืนยัน</button></div></div>`;
+                 content = `<div class="bg-white p-6 rounded-[2rem] w-full max-w-sm shadow-2xl modal-enter">
+                 <h3 class="font-bold text-xl mb-6 text-slate-800 flex items-center gap-2">↔️ โยกย้ายเงิน</h3>
+                 <label class="text-xs font-bold text-slate-500 ml-1 mb-1 block">วันที่ทำรายการ</label>
+                 <input id="tr-date" type="date" class="w-full border p-4 rounded-2xl mb-3 bg-slate-50 focus:ring-2 focus:ring-indigo-500 outline-none" value="${today}">
+                 <div class="grid grid-cols-2 gap-4 mb-3"><div><label class="text-xs font-bold text-slate-500 block mb-1">จากบัญชี</label><select id="tr-from" class="w-full border p-3 rounded-xl bg-slate-50 text-sm">${accountOptions}</select></div><div><label class="text-xs font-bold text-slate-500 block mb-1">ไปที่บัญชี</label><select id="tr-to" class="w-full border p-3 rounded-xl bg-slate-50 text-sm">${accountOptions}</select></div></div>
+                 <input id="tr-desc" class="w-full border p-4 rounded-2xl mb-3 bg-slate-50 focus:ring-2 focus:ring-indigo-500 outline-none" placeholder="เหตุผลการย้าย (ตัวเลือก)">
+                 <input id="tr-amount" type="number" class="w-full border p-4 rounded-2xl mb-6 bg-slate-50 focus:ring-2 focus:ring-indigo-500 outline-none text-lg font-medium" placeholder="จำนวนเงิน">
+                 <div class="flex gap-3"><button onclick="closeModal()" class="flex-1 py-3 bg-slate-100 rounded-xl font-bold">ยกเลิก</button><button onclick="submitTransfer()" class="flex-1 py-3 bg-indigo-600 text-white rounded-xl font-bold shadow-lg">ยืนยัน</button></div></div>`;
             } else if (type === 'register') {
                 content = `<div class="bg-white p-6 rounded-[2rem] w-full max-w-sm shadow-2xl modal-enter"><h3 class="font-bold text-xl mb-4 text-slate-800">สมัครสมาชิกใหม่</h3><input id="m-name" class="w-full p-4 bg-slate-50 rounded-xl border border-slate-200 mb-3 outline-none focus:ring-2 focus:ring-blue-500" placeholder="ชื่อเล่น (Nickname)"><div class="flex gap-2 mb-4"><button onclick="currentRegRole='staff'; this.nextElementSibling.classList.replace('bg-blue-600','bg-slate-100'); this.nextElementSibling.classList.replace('text-white','text-slate-500'); this.classList.replace('bg-slate-100','bg-blue-600'); this.classList.replace('text-slate-500','text-white');" class="flex-1 py-3 rounded-xl bg-blue-600 text-white font-bold transition-all">พนักงาน</button><button onclick="currentRegRole='manager'; this.previousElementSibling.classList.replace('bg-blue-600','bg-slate-100'); this.previousElementSibling.classList.replace('text-white','text-slate-500'); this.classList.replace('bg-slate-100','bg-blue-600'); this.classList.replace('text-slate-500','text-white');" class="flex-1 py-3 rounded-xl bg-slate-100 text-slate-500 font-bold transition-all">ผู้จัดการ</button></div><input id="m-pin" type="tel" maxlength="4" class="w-full p-4 bg-slate-50 rounded-xl border border-slate-200 mb-6 text-center text-2xl tracking-[0.5em] outline-none focus:ring-2 focus:ring-blue-500" placeholder="••••"><div class="flex gap-3"><button onclick="closeModal()" class="flex-1 py-3 bg-slate-100 rounded-xl font-bold">ยกเลิก</button><button onclick="submitRegister()" class="flex-1 py-3 bg-blue-600 text-white rounded-xl font-bold shadow-lg">ยืนยัน</button></div></div>`;
             } else if (type === 'adminAuth') {
@@ -500,14 +576,16 @@
                 <div class="pt-4 border-t border-slate-100"><h4 class="font-bold text-sm mb-2 text-slate-500">สร้างกระเป๋าใหม่</h4><div class="flex gap-2 mb-2"><input id="new-acc-icon" class="w-12 p-2 border rounded-xl text-center" placeholder="Icon" value="💰"><input id="new-acc-name" class="flex-1 p-2 border rounded-xl" placeholder="ชื่อกระเป๋า (เช่น ค่ากาแฟ)"></div><button onclick="createAccount()" class="w-full py-3 bg-blue-600 text-white rounded-xl font-bold shadow-lg">สร้างกระเป๋า</button></div></div>`;
             }
             overlay.innerHTML = content;
-            setTimeout(() => { const input = overlay.querySelector('input'); if(input) input.focus(); }, 100);
+            setTimeout(() => { const input = overlay.querySelector('input:not([type="date"])'); if(input) input.focus(); }, 100);
         }
 
+        // --- CORE FUNCTIONS ---
         function openModal(type) {
             if(type === 'manage-modal') renderManageModal();
             else if(type === 'accounts-modal') renderModal('accounts');
             else renderModal(type);
         }
+        
         function closeModal() { document.getElementById('modal-overlay').classList.add('hidden'); }
         function openPinModal(u) { selectedUser = u; renderModal('pin', u); }
         function verifyPin() {
@@ -529,6 +607,17 @@
         }
 
         // --- ASYNC ACTIONS & LOGIC ---
+
+        function getTimestampFromDateStr(dateStr) {
+            if (!dateStr) return firebase.firestore.FieldValue.serverTimestamp();
+            const [year, month, day] = dateStr.split('-');
+            const d = new Date();
+            d.setFullYear(parseInt(year));
+            d.setMonth(parseInt(month) - 1);
+            d.setDate(parseInt(day));
+            return firebase.firestore.Timestamp.fromDate(d);
+        }
+
         async function submitRegister() {
             const name = document.getElementById('m-name').value, pin = document.getElementById('m-pin').value;
             if(!name || pin.length < 4) return showToast("กรอกข้อมูลให้ครบ", "error");
@@ -546,16 +635,33 @@
         async function deleteAccount(id) { if(confirm('ลบ?')) { await db.collection('artifacts').doc(appId).collection('public').doc('data').collection('accounts').doc(id).delete(); renderModal('accounts'); } }
 
         async function submitRequest() {
-            const desc = document.getElementById('req-desc').value, amount = document.getElementById('req-amount').value, accId = document.getElementById('req-acc').value;
+            const desc = document.getElementById('req-desc').value;
+            const amount = document.getElementById('req-amount').value;
+            const accId = document.getElementById('req-acc').value;
+            const dateStr = document.getElementById('req-date').value;
             if(!desc || !amount) return;
-            const reqData = {description: desc, amount: parseFloat(amount), accountId: accId, requester: currentUser.name, requesterId: currentUser.id, status: 'pending', createdAt: firebase.firestore.FieldValue.serverTimestamp(), type: 'expense'};
+            
+            const reqData = {
+                description: desc, 
+                amount: parseFloat(amount), 
+                accountId: accId, 
+                requester: currentUser.name, 
+                requesterId: currentUser.id, 
+                status: 'pending', 
+                createdAt: getTimestampFromDateStr(dateStr), 
+                type: 'expense'
+            };
             await db.collection('artifacts').doc(appId).collection('public').doc('data').collection('requests').add(reqData);
-            sendLine(`🔔 ขอเบิกเงิน: ${desc} (${formatMoney(reqData.amount)})\nโดย: ${currentUser.name}`);
+            sendLine(`🔔 ขอเบิกเงิน: ${desc} (${formatMoney(reqData.amount)})\nบัญชี: ${getAccName(accId)}\nโดย: ${currentUser.name}`);
             closeModal(); showToast("ส่งคำขอเบิกแล้ว");
         }
 
         async function submitDeposit() {
-            const desc = document.getElementById('dep-desc').value, amount = document.getElementById('dep-amount').value, accId = document.getElementById('dep-acc').value;
+            const desc = document.getElementById('dep-desc').value;
+            const amount = document.getElementById('dep-amount').value;
+            const accId = document.getElementById('dep-acc').value;
+            const cat = document.getElementById('dep-cat').value;
+            const dateStr = document.getElementById('dep-date').value;
             if(!amount) return;
             
             let slipBase64 = null;
@@ -563,19 +669,34 @@
             if (fileInput && fileInput.files[0]) slipBase64 = await resizeImage(fileInput.files[0]);
 
             await db.collection('artifacts').doc(appId).collection('public').doc('data').collection('transactions').add({
-                description: desc || 'เงินเติม', amount: parseFloat(amount), accountId: accId, performer: currentUser.name, type: 'income', createdAt: firebase.firestore.FieldValue.serverTimestamp(), slip: slipBase64
+                description: desc || 'เงินเติม', 
+                amount: parseFloat(amount), 
+                accountId: accId, 
+                category: cat, 
+                performer: currentUser.name, 
+                type: 'income', 
+                createdAt: getTimestampFromDateStr(dateStr), 
+                slip: slipBase64
             });
-            sendLine(`💰 เติมเงิน: ${formatMoney(parseFloat(amount))}\nรายละเอียด: ${desc}\nโดย: ${currentUser.name}`);
+            sendLine(`💰 เติมเงิน: ${formatMoney(parseFloat(amount))}\nเข้าบัญชี: ${getAccName(accId)}\nรายละเอียด: ${desc}\nโดย: ${currentUser.name}`);
             closeModal(); triggerConfetti(); showToast("เติมเงินสำเร็จ! 🎉");
         }
 
         async function submitTransfer() {
-            const from = document.getElementById('tr-from').value, to = document.getElementById('tr-to').value, desc = document.getElementById('tr-desc').value, amount = parseFloat(document.getElementById('tr-amount').value);
+            const from = document.getElementById('tr-from').value;
+            const to = document.getElementById('tr-to').value;
+            const desc = document.getElementById('tr-desc').value;
+            const amount = parseFloat(document.getElementById('tr-amount').value);
+            const dateStr = document.getElementById('tr-date').value;
+
             if(!amount || from === to) return showToast("ข้อมูลไม่ถูกต้อง", 'error');
             const batch = db.batch();
             const txRef = db.collection('artifacts').doc(appId).collection('public').doc('data').collection('transactions');
-            batch.set(txRef.doc(), { description: `โอนออกไป ${getAccName(to)}`, amount: amount, accountId: from, performer: currentUser.name, type: 'expense', createdAt: firebase.firestore.FieldValue.serverTimestamp() });
-            batch.set(txRef.doc(), { description: `รับโอนจาก ${getAccName(from)}`, amount: amount, accountId: to, performer: currentUser.name, type: 'income', createdAt: firebase.firestore.FieldValue.serverTimestamp() });
+            
+            const txDate = getTimestampFromDateStr(dateStr);
+
+            batch.set(txRef.doc(), { description: `โอนออกไป ${getAccName(to)}${desc ? ' ('+desc+')' : ''}`, amount: amount, accountId: from, performer: currentUser.name, type: 'expense', createdAt: txDate });
+            batch.set(txRef.doc(), { description: `รับโอนจาก ${getAccName(from)}${desc ? ' ('+desc+')' : ''}`, amount: amount, accountId: to, performer: currentUser.name, type: 'income', createdAt: txDate });
             await batch.commit();
             sendLine(`🔄 โยกเงิน: ${formatMoney(amount)}\nจาก: ${getAccName(from)} -> ${getAccName(to)}\nโดย: ${currentUser.name}`);
             closeModal(); triggerConfetti(); showToast("โยกย้ายสำเร็จ");
@@ -585,10 +706,18 @@
             const req = appData.requests.find(r => r.id === id);
             if(status === 'approved') {
                 await db.collection('artifacts').doc(appId).collection('public').doc('data').collection('transactions').add({
-                    description: req.description, amount: parseFloat(req.amount), accountId: req.accountId || 'main', performer: req.requester, approver: currentUser.name, type: 'expense', createdAt: firebase.firestore.FieldValue.serverTimestamp()
+                    description: req.description, 
+                    amount: parseFloat(req.amount), 
+                    accountId: req.accountId || 'main', 
+                    performer: req.requester, 
+                    approver: currentUser.name, 
+                    type: 'expense', 
+                    createdAt: req.createdAt // ใช้วันที่ที่พนักงานระบุตอนขอเบิก
                 });
                 triggerConfetti(); showToast("อนุมัติแล้ว");
                 sendLine(`✅ อนุมัติเบิก: ${req.description} (${formatMoney(req.amount)})\nอนุมัติโดย: ${currentUser.name}`);
+            } else {
+                showToast("ปฏิเสธรายการแล้ว");
             }
             await db.collection('artifacts').doc(appId).collection('public').doc('data').collection('requests').doc(id).update({status});
         }
@@ -609,12 +738,11 @@
             document.getElementById('toast-container').appendChild(el);
             setTimeout(() => { el.style.opacity = '0'; el.style.transform = 'translateY(20px)'; setTimeout(() => el.remove(), 300); }, 3000);
         }
-        function getAccName(id) { return (appData.accounts.find(a => a.id === id) || {}).name || 'Unknown'; }
+        function getAccName(id) { return (appData.accounts.find(a => a.id === id) || {}).name || 'กองกลางหลัก'; }
         function viewSlip(data) { document.getElementById('slip-image-view').src = data; document.getElementById('slip-modal-container').classList.remove('hidden'); }
         
         async function sendLine(msg) {
             if(!lineToken) return;
-            // Use CORS Proxy
             const proxyUrl = "https://corsproxy.io/?";
             const targetUrl = "https://notify-api.line.me/api/notify";
             try {
